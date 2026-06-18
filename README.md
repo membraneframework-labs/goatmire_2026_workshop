@@ -1,21 +1,25 @@
-# Goatmire2026Workshop
+# Multimedia with Membrane 101
 
-**TODO: Add description**
+This repository contains all the necessary materials for participation in 
+Multimedia with Membrane 101" workshops at Goatmire 2026 Elixir conference.
 
-## Installation
+## Workshop structure
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `goatmire_2026_workshop` to your list of dependencies in `mix.exs`:
+The workshop will be split into four chapters, each one consisting of two parts:
+- Theoretical introduction to multimedia and Membrane concepts relevant for this
+  chapter.
+- Coding session, where you will develop the project by completing some tasks we
+  came up with.
 
-```elixir
-def deps do
-  [
-    {:goatmire_2026_workshop, "~> 0.1.0"}
-  ]
-end
-```
+The presentations and tasks are located in the `materials/` directory.
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/goatmire_2026_workshop>.
+## Project development
+
+During the workshop you'll be developing a project based on Membrane from the
+ground up. Each chapter will be building on top of the next.
+This repo contains four branches, which can be thought of as checkpoints - each
+one contains the project in a state ready for the next chapter. We recommend
+building the project on your own and consulting the checkpoints when you feel
+the need to, but if something goes wrong there is always the option to fall back
+on a branch ;)
 
