@@ -1,7 +1,7 @@
 # Multimedia with Membrane 101
 
 This repository contains all the necessary materials for participation in 
-Multimedia with Membrane 101" workshops at Goatmire 2026 Elixir conference.
+"Multimedia with Membrane 101" workshops at Goatmire 2026 Elixir conference.
 
 ## Workshop structure
 
