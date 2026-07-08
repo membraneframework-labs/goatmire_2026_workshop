@@ -85,37 +85,51 @@ added the necessary deps to this project:
     ]
 ```
 
-Let's quickly go over them and what components will be relevant to us:
-- `:membrane_core` - The main package of the framework - all other packages
-  depend on it. It implements all functionalities that make the framework work.
-- `:membrane_file_plugin` - Plugin that provides components for reading and
-  writing to files: 
-  * `Membrane.File.Source` - Component that reads chunks of raw bytes from a given
-    file, puts them into buffers and sends them along 
-  * `Membrane.File.Sink` - Component that writes received chunks of data to a
-    file.
-- `:membrane_ivf_plugin` - Plugin that provides components for dealing with IVF
-  containers: 
-  * `Membrane.IVF.Deserializer` - Component that receives a stream with an IVF
-    container and outputs the stream extracted from the container.
-- `:membrane_transcoder_plugin` - A real workhorse - plugin that provides a
-  single, yet really powerful transcoding component:
-  * `Membrane.Transcoder` - This component is a bin that is capable of transcoding 
-    the input audio or video stream into a desired format specified with simple 
-    declarative API. This will spare you from the task of:
-    - manually ensuring the stream is suited for the decoder, 
-    - setting up the decoder, 
-    - ensuring the raw video is suited for the encoder, 
-    - setting up the encoder,
-    - ensuring the encoded output is suitable for MP4 muxing.
-    Instead, you'll only need to specify the output format, and the Transcoder
-    will handle the machinery itself.
-- `:membrane_mp4_plugin` - Plugin that provides components for muxing and 
-  demuxing MP4 containers:
-  * `:Membrane.MP4.Muxer.ISOM` - A component that takes in a single or multiple
-    input streams and muxes them into an MP4 container, ready to be saved to a
-    file.
+`:membrane_core` is the main package of the framework - all other packages depend on it. It implements all functionalities that make the framework work. Rest of the dependencies provide components that will be relevant to us:
 
+| Package | Component | Description |
+|---------|-----------|-------------|
+| `:membrane_file_plugin` | `Membrane.File.Source` | Component that reads chunks of raw bytes from a given file, puts them into buffers and sends them along | 
+| `:membrane_file_plugin` | `Membrane.File.Sink` | Component that writes received chunks of data to a file. | 
+| `:membrane_ivf_plugin` | `Membrane.IVF.Deserializer` | Component that receives a stream with an IVF container and outputs the stream extracted from the container. |
+| `:membrane_transcoder_plugin` | `Membrane.Transcoder` | This powerful component is a bin that is capable of transcoding the input audio or video stream into a desired format specified with simple declarative API. This will spare you from the task of:<br> - manually ensuring the stream is suited for the decoder, <br> - setting up the decoder, <br> - ensuring the raw video is suited for the encoder, <br> - setting up the encoder, <br> - ensuring the encoded output is suitable for MP4 muxing. <br> Instead, you'll only need to specify the output format, and the Transcoder will handle the machinery itself. | 
+| `:membrane_mp4_plugin` | `Membrane.MP4.Muxer.ISOM` | A component that takes in a single or multiple input streams and muxes them into an MP4 container, ready to be saved to a file. |
+
+
+
+
+
+<!-- Let's quickly go over them and what components will be relevant to us: -->
+<!-- - `:membrane_core` - The main package of the framework - all other packages -->
+<!--   depend on it. It implements all functionalities that make the framework work. -->
+<!-- - `:membrane_file_plugin` - Plugin that provides components for reading and -->
+<!--   writing to files:  -->
+<!--   * `Membrane.File.Source` - Component that reads chunks of raw bytes from a given -->
+<!--     file, puts them into buffers and sends them along  -->
+<!--   * `Membrane.File.Sink` - Component that writes received chunks of data to a -->
+<!--     file. -->
+<!-- - `:membrane_ivf_plugin` - Plugin that provides components for dealing with IVF -->
+<!--   containers:  -->
+<!--   * `Membrane.IVF.Deserializer` - Component that receives a stream with an IVF -->
+<!--     container and outputs the stream extracted from the container. -->
+<!-- - `:membrane_transcoder_plugin` - A real workhorse - plugin that provides a -->
+<!--   single, yet really powerful transcoding component: -->
+<!--   * `Membrane.Transcoder` - This component is a bin that is capable of transcoding  -->
+<!--     the input audio or video stream into a desired format specified with simple  -->
+<!--     declarative API. This will spare you from the task of: -->
+<!--     - manually ensuring the stream is suited for the decoder,  -->
+<!--     - setting up the decoder,  -->
+<!--     - ensuring the raw video is suited for the encoder,  -->
+<!--     - setting up the encoder, -->
+<!--     - ensuring the encoded output is suitable for MP4 muxing. -->
+<!--     Instead, you'll only need to specify the output format, and the Transcoder -->
+<!--     will handle the machinery itself. -->
+<!-- - `:membrane_mp4_plugin` - Plugin that provides components for muxing and  -->
+<!--   demuxing MP4 containers: -->
+<!--   * `:Membrane.MP4.Muxer.ISOM` - A component that takes in a single or multiple -->
+<!--     input streams and muxes them into an MP4 container, ready to be saved to a -->
+<!--     file. -->
+<!---->
 That's all the components need for this task. Time to learn how to build a
 pipeline!
 
@@ -227,6 +241,19 @@ graph LR
   D[:my_other_source] --> B
 ```
 
+Last thing. Almost all components define _options_, which can be passed when they're
+created. To do that, pass a component's struct instead of a module in `child/2` and
+`child/3` functions:
+
+```elixir
+spec = 
+  [
+    child(:my_source, %MySource{some_element_option: :some_value})
+    ...
+  ]
+```
+
+You can see the available options of a component in it's docs.
 
 ### Building the pipeline
 
@@ -258,7 +285,11 @@ The desired output format of the Transcoder is specified by its
 `:output_stream_format` option. For the Transcoder that's converting VP8 to H264,
 you need to set `output_stream_format: %Membrane.Transcoder.OutputFormat.H264{stream_structure: :avc1}`, 
 and for the other one converting MP3 to AAC you need to set 
-`output_stream_format: %Membrane.Transcoder.OutputFormat.AAC{stream_structure: :esds}`, 
+`output_stream_format: %Membrane.Transcoder.OutputFormat.AAC{stream_structure: :esds}`. Additionally,
+the audio transcoder will need information what is the incoming stream format. `Membrane.File.Source` 
+can be provided with the information what is the content format of the file it's
+reading through `:content_format` option. In this case it should be set to
+`Membrane.MPEGAudio`. 
 
 </details>
 
