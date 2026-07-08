@@ -2,13 +2,15 @@
 
 In this chapter you'll learn the essentials about codecs and containers
 and how to build Membrane pipelines. You will then implement a simple pipeline
-by yourself.
+by yourself. This file contains a pretty lenghty and detailed explanation of the
+task - a more concise version can be found in [TLDR.md](TLDR.md). If you finished the main 
+task and are looking for a challenge, take a look at [BONUS_TASKS.md](BONUS_TASKS.md)
 
 ## Theory overview
 
 TODO
 
-## The task
+## Task
 Your task is to create a pipeline that will read audio from an MP3 file,
 VP8 video from an IVF file, transcode them into AAC and H264 respectively, and
 mux them into a single MP4 container file.
@@ -21,7 +23,7 @@ Let's go over the process step by step.
 You have access to two media files - one with audio, the other with video: 
 - `assets/input_video.ivf` - **IVF** (Indeo Video Format) is a simple container 
   format for storing video. It supports multiple multiple codecs, and the video 
-  stored in this one is encoded with **VP8** - an open and royalty-free video coding format. 
+  stored in this one is encoded with **VP8**, an open and royalty-free video coding format. 
 - `assets/input_audio.mp3` - **MP3** is an audio coding format. It doesn't need to be
 payloaded to a separate container, the encoded stream can just be put into a file directly.
 
@@ -89,10 +91,10 @@ added the necessary deps to this project:
 
 | Package | Component | Description |
 |---------|-----------|-------------|
-| `:membrane_file_plugin` | `Membrane.File.Source` | Component that reads chunks of raw bytes from a given file, puts them into buffers and sends them along | 
-| `:membrane_file_plugin` | `Membrane.File.Sink` | Component that writes received chunks of data to a file. | 
-| `:membrane_ivf_plugin` | `Membrane.IVF.Deserializer` | Component that receives a stream with an IVF container and outputs the stream extracted from the container. |
-| `:membrane_transcoder_plugin` | `Membrane.Transcoder` | This powerful component is a bin that is capable of transcoding the input audio or video stream into a desired format specified with simple declarative API. This will spare you from the task of:<br> - manually ensuring the stream is suited for the decoder, <br> - setting up the decoder, <br> - ensuring the raw video is suited for the encoder, <br> - setting up the encoder, <br> - ensuring the encoded output is suitable for MP4 muxing. <br> Instead, you'll only need to specify the output format, and the Transcoder will handle the machinery itself. | 
+| `:membrane_file_plugin` | `Membrane.File.Source` | Reads chunks of raw bytes from a given file, puts them into buffers and sends them along | 
+| `:membrane_file_plugin` | `Membrane.File.Sink` | Writes received chunks of data to a file. | 
+| `:membrane_ivf_plugin` | `Membrane.IVF.Deserializer` | Receives a stream with an IVF container and outputs the stream extracted from the container. |
+| `:membrane_transcoder_plugin` | `Membrane.Transcoder` | A powerful component capable of transcoding the input audio or video stream into a desired format specified with a simple declarative API. This will spare you from the task of:<br> - manually ensuring the stream is suited for the decoder, <br> - setting up the decoder, <br> - ensuring the raw video is suited for the encoder, <br> - setting up the encoder, <br> - ensuring the encoded output is suitable for MP4 muxing. <br> Instead, you'll only need to specify the output format, and the Transcoder will handle the machinery itself. | 
 | `:membrane_mp4_plugin` | `Membrane.MP4.Muxer.ISOM` | A component that takes in a single or multiple input streams and muxes them into an MP4 container, ready to be saved to a file. |
 
 
@@ -133,10 +135,12 @@ added the necessary deps to this project:
 That's all the components need for this task. Time to learn how to build a
 pipeline!
 
-### Pipelines primer
+### Pipelines
 
-In this section you'll learn how to define the structure of pipelines - you need
-a way to represent a conceptual pipeline in code.
+The purpose of a pipeline is to link components together to perform a
+given task and orchestrate the process. In this section you'll learn how to define
+the arrangement of components in your pipeline - you need a way to
+represent a conceptual pipeline in code.
 
 Behavior of a pipeline is mostly controlled by what _actions_ it returns from
 its _callbacks_. You don't need to worry about all that right now, for the purpose of this
@@ -149,7 +153,7 @@ but for our use case you'll only need the
 [`spec` action](https://membrane-core.hexdocs.pm/Membrane.Pipeline.Action.html#t:spec/0).
 This action is used to spawn the pipeline's children - components - and
 specify how they will be organized
-once it's executed. A detailed description how to define the topology of these
+once it's executed. A detailed description how to define the arrangement of these
 components can be found in the
 [documentation of `ChildrenSpec` module](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html), 
 but you'll need only a handful of available functionalities.
@@ -160,6 +164,7 @@ To create a 'start' of a pipeline, [`child/2`](https://membrane-core.hexdocs.pm/
 spec = 
   [
     child(:my_source, MySource)
+    ...
   ]
 ```
 
@@ -175,6 +180,7 @@ spec =
   [
     child(:my_source, MySource)
     |> child(:my_filter, MyFilter)
+    ...
   ]
 ```
 
@@ -227,7 +233,7 @@ spec =
     child(:my_source, MySource)
     |> child(:my_filter, MyFilter)
     |> child(:my_sink, MySink),
-    child(:my_other_source, MySource),
+    child(:my_other_source, MySource)
     |> get_child(:my_filter)
   ]
 ```
@@ -255,6 +261,21 @@ spec =
 
 You can see the available options of a component in it's docs.
 
+Now that you have the structure defined, it's ready to be materialized. In order
+to do so, execute the `:spec` action with the structure you defined. Actions are
+executed when they're returned from callbacks:
+
+```elixir
+@impl true
+def handle_init(_ctx, _opts) do # this can be any callback
+  spec = ...
+  {[spec: spec], %{}}
+end
+```
+
+When this callback returns, the pipeline will spawn and link the components
+as specified in `spec`.
+
 ### Building the pipeline
 
 Phew, that was a to take in, but now you have all the necessary tools and
@@ -263,19 +284,48 @@ information to create a pipeline to complete the task!
 To create an empty pipeline you can call 
 
 ```bash
-mix membrane.gen.pipeline MyPipeline
+mix membrane.gen.pipeline WorkshopPipeline
 ```
 
-This will create `my_pipeline.ex` file in `lib/` directory and inside it a
-skeleton of a pipeline, with the main module being called `MyPipeline`. Don't get
+This will create `workshop_pipeline.ex` file in `lib/` directory and inside it a
+skeleton of a pipeline, with the main module being called `WorkshopPipeline`. Don't get
 intimidated by the amount of generated comments, they're mostly optional
-callbacks, useful only in specific circumstances. Everything you'll need for
-this task can be done inside `handle_init/2` callback.
+callbacks, useful only in specific circumstances. The core of what you'll need for
+this task can be done inside `handle_init/2` callback. 
 
 The pipeline will be a bit more complex than the
 shown examples, but not by much. You need to figure out how the components you
 need (see [Building blocks](#building-blocks) section) should be connected and
 return a `spec` action reflecting the pipeline you designed. 
+
+Last thing to take care of is termination - pipeline doesn't know by itself when
+it's job is done. In our case we want to terminate it when end of stream is
+registered by the last component. This will mean that no more media will flow in
+through the pipeline and the processing is finished. To accomplish this, the
+[`handle_element_end_of_stream/4`](https://membrane-core.hexdocs.pm/Membrane.Pipeline.html#c:handle_element_end_of_stream/4)
+callback will come in handy. It's executed every time a child of the pipeline
+receives end of stream. We want to terminate the pipeline only when the _last_
+component receives end of stream, we can ignore other components. To terminate a
+pipeline, a [`:terminate`](https://membrane-core.hexdocs.pm/Membrane.Pipeline.Action.html#t:terminate/0)
+action should be returned with reason `:normal`:
+
+```elixir
+@impl true
+def handle_element_end_of_stream(:last_element_name, _pad, _ctx, state) do
+  {[terminate: :normal], state}
+end
+
+@impl true
+def handle_element_end_of_stream(_element, _pad, _ctx, state) do
+  {[], state}
+end
+```
+
+Great, if we're ready to go, let's run the pipeline and see what happens! To do
+so, execute `mix run run_pipeline.exs`, a simple script that starts the pipeline
+and waits for it's termination. If everything went smoothly, you should have
+produced a file containing the resulting MP4 - you can play it with a player of
+your choice and see if you like what you found inside.
 
 #### Hints
 <details>
@@ -294,112 +344,3 @@ reading through `:content_format` option. In this case it should be set to
 </details>
 
 
-## BONUS Task
-
-If you managed to finish the main task and are up for a challenge, then this
-BONUS task is for you.
-
-It's really simple - reverse the pipeline you implemented. Transform an MP4 file
-with H264 and AAC tracks into an IVF file with VP9 and an MP3 file. You'll need
-a few more components that weren't mentioned:
-* `Membrane.MP4.Demuxer.ISOM` - A component that extracts different tracks from
-  an MP4 container - essentially the reverse of `Membrane.MP4.Muxer.ISOM`. 
-
-#### Hints
-<details>
-<summary><b>How to actually get the streams from the Demuxer?</b></summary>
-
-The thing you'll need for this task is to have more control of
-the pads - the connectors of your pipeline. When
-you link two components, you can specify a name and additional properties of their input or
-output pads by using [`via_in/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_in/3)
-and [`via_out/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_out/3)
-respectively. These functions take three arguments - the builder, pad identifier
-and a keyword list of properties:
-
-```elixir
-spec = 
-  [
-    child(:my_source, MySource)
-    |> via_out(:output, options: [some_option: :some_value])
-    |> via_in(:input, options: [some_other_option: :some_other_value])
-    |> child(:my_filter, MyFilter)
-    ...
-  ]
-```
-
-In this pipeline it's explicitly stated that `:my_source`'s output pad called `:output` will
-be connected to `:my_filter`'s input pad called `:input`. In this example we
-also assume that `:output` pad of `MySource` has some options, `:some_option`
-being one of them, and that `:input` pad of `MyFilter` also has some options, 
-`:some_other_option` being one of them. 
-
-Components define pad options for more precise control of the
-incoming or outgoing streams.
-[`via_in/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_in/3)
-and [`via_out/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_out/3)
-are the way to actually pass these options to the pads. Components can also have
-multiple different pads, and these functions allow to specify which one to link. 
-
-You don't have to use `via_in/3` and `via_out/3` together, you can link the
-components directly like this: 
-
-```elixir
-spec = 
-  [
-    child(:my_source, MySource)
-    |> via_out(:output, options: [some_option: :some_value])
-    |> child(:my_filter, MyFilter)
-    ...
-  ]
-```
-
-And then the default input pad of `MyFilter` will be linked.
-
-In case of our Demuxer, we need to be able to tell which track to send on which
-output pad - it doesn't know where it should send the demuxed tracks. The MP4
-we're demuxing contains two tracks - audio and video. This case is very common,
-so Demuxer makes the process easier for this case - you just need to specify
-which pad will output audio, and which video, with the `:kind` option:
-
-```elixir
-spec = [
-  ... # pipeline start
-  |> child(:demuxer, Membrane.MP4.Demuxer.ISOM)
-  |> via_out(:output, options: [kind: :audio])
-  |> ... # audio branch of the pipeline,
-  get_child(:demuxer)
-  |> via_out(:output, options: [kind: :video])
-  |> ... # video branch of the pipeline,
-]
-```
-</details>
-
-## BONUS B O N U S Task
-
-Woah, you're good. Hopefully this one will stop you, because we don't have any
-more (for this chapter at least). 
-
-Your BONUS B O N U S task is to extend the pipeline from BONUS task and add support
-for MP4's with any number of H264 and AAC tracks - each one should end up in
-a separate IVF or MP3 file. 
-
-<details>
-<summary><b>How am I supposed to know what tracks are in the MP4?</b></summary>
-
-To check manually, you can use `ffprobe` command on the file - the output is a
-bit cluttered, search for records looking something like this:
-`Stream #0:0[0x1](und): Audio: aac` - this one indicates an AAC audio
-track.
-
-To check it programatically, a `:new_tracks` notification emitted by the Demuxer
-will be your ally - see the 
-[Demuxer's documentation](https://membrane-mp4-plugin.hexdocs.pm/Membrane.MP4.Demuxer.ISOM.html) 
-for details.
-</details>
-
-<details>
-<summary><b>Okay, I now know what's in the MP4, but how to link the Demuxer further?</b></summary>
-
-Familiarize yourself with the concept of [Dynamic pads](https://membrane-core.hexdocs.pm/pads.html#dynamic-pads)
-</details>
