@@ -1,4 +1,4 @@
-# BONUS Tasks
+# Chapter 1 - BONUS Tasks
 
 If you managed to finish the main task and are up for a challenge, then these
 BONUS tasks are for you.
@@ -17,58 +17,11 @@ a few more components that weren't mentioned:
 <details>
 <summary><b>How to actually get the streams from the Demuxer?</b></summary>
 
-The thing you'll need for this task is to have more control of
-the pads - the connectors of your pipeline. When
-you link two components, you can specify a name and additional properties of their input or
-output pads by using [`via_in/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_in/3)
-and [`via_out/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_out/3)
-respectively. These functions take three arguments - the builder, pad identifier
-and a keyword list of properties:
-
-```elixir
-spec = 
-  [
-    child(:my_source, MySource)
-    |> via_out(:output, options: [some_option: :some_value])
-    |> via_in(:input, options: [some_other_option: :some_other_value])
-    |> child(:my_filter, MyFilter)
-    ...
-  ]
-```
-
-In this pipeline it's explicitly stated that `:my_source`'s output pad called `:output` will
-be connected to `:my_filter`'s input pad called `:input`. In this example we
-also assume that `:output` pad of `MySource` has some options, `:some_option`
-being one of them, and that `:input` pad of `MyFilter` also has some options, 
-`:some_other_option` being one of them. 
-
-Components define pad options for more precise control of the
-incoming or outgoing streams.
-[`via_in/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_in/3)
-and [`via_out/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_out/3)
-are the way to actually pass these options to the pads. Components can also have
-multiple different pads, and these functions allow to specify which one to link. 
-
-You don't have to use `via_in/3` and `via_out/3` together, you can link the
-components directly like this: 
-
-```elixir
-spec = 
-  [
-    child(:my_source, MySource)
-    |> via_out(:output, options: [some_option: :some_value])
-    |> child(:my_filter, MyFilter)
-    ...
-  ]
-```
-
-And then the default input pad of `MyFilter` will be linked.
-
-In case of our Demuxer, we need to be able to tell which track to send on which
-output pad - it doesn't know where it should send the demuxed tracks. The MP4
+You need to be able to tell which track to send on which
+output pad - the Demuxer doesn't know where it should send the demuxed tracks. The MP4
 we're demuxing contains two tracks - audio and video. This case is very common,
 so Demuxer makes the process easier for this case - you just need to specify
-which pad will output audio, and which video, with the `:kind` option:
+which pad will output audio, and which video, with the `:kind` pad option:
 
 ```elixir
 spec = [

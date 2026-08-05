@@ -2,13 +2,12 @@
 
 In this chapter you'll learn the essentials about codecs and containers
 and how to build Membrane pipelines. You will then implement a simple pipeline
-by yourself. This file contains a pretty lenghty and detailed explanation of the
-task - a more concise version can be found in [TLDR.md](TLDR.md). If you finished the main 
-task and are looking for a challenge, take a look at [BONUS_TASKS.md](BONUS_TASKS.md)
+by yourself. 
 
-## Theory overview
-
-TODO
+This file contains a detailed and pretty lengthy theoretical introduction and
+explanation of the task - a more concise version can be found in
+[TLDR.md](./TLDR.md). If you finished the main task and are looking for a challenge,
+take a look at [BONUS_TASKS.md](./BONUS_TASKS.md)
 
 ## Task
 Your task is to create a pipeline that will read audio from an MP3 file,
@@ -91,47 +90,13 @@ added the necessary deps to this project:
 
 | Package | Component | Description |
 |---------|-----------|-------------|
-| `:membrane_file_plugin` | `Membrane.File.Source` | Reads chunks of raw bytes from a given file, puts them into buffers and sends them along | 
+| `:membrane_file_plugin` | `Membrane.File.Source` | Reads chunks of raw bytes from a given file and sends them along | 
 | `:membrane_file_plugin` | `Membrane.File.Sink` | Writes received chunks of data to a file. | 
 | `:membrane_ivf_plugin` | `Membrane.IVF.Deserializer` | Receives a stream with an IVF container and outputs the stream extracted from the container. |
 | `:membrane_transcoder_plugin` | `Membrane.Transcoder` | A powerful component capable of transcoding the input audio or video stream into a desired format specified with a simple declarative API. This will spare you from the task of:<br> - manually ensuring the stream is suited for the decoder, <br> - setting up the decoder, <br> - ensuring the raw video is suited for the encoder, <br> - setting up the encoder, <br> - ensuring the encoded output is suitable for MP4 muxing. <br> Instead, you'll only need to specify the output format, and the Transcoder will handle the machinery itself. | 
 | `:membrane_mp4_plugin` | `Membrane.MP4.Muxer.ISOM` | A component that takes in a single or multiple input streams and muxes them into an MP4 container, ready to be saved to a file. |
 
 
-
-
-
-<!-- Let's quickly go over them and what components will be relevant to us: -->
-<!-- - `:membrane_core` - The main package of the framework - all other packages -->
-<!--   depend on it. It implements all functionalities that make the framework work. -->
-<!-- - `:membrane_file_plugin` - Plugin that provides components for reading and -->
-<!--   writing to files:  -->
-<!--   * `Membrane.File.Source` - Component that reads chunks of raw bytes from a given -->
-<!--     file, puts them into buffers and sends them along  -->
-<!--   * `Membrane.File.Sink` - Component that writes received chunks of data to a -->
-<!--     file. -->
-<!-- - `:membrane_ivf_plugin` - Plugin that provides components for dealing with IVF -->
-<!--   containers:  -->
-<!--   * `Membrane.IVF.Deserializer` - Component that receives a stream with an IVF -->
-<!--     container and outputs the stream extracted from the container. -->
-<!-- - `:membrane_transcoder_plugin` - A real workhorse - plugin that provides a -->
-<!--   single, yet really powerful transcoding component: -->
-<!--   * `Membrane.Transcoder` - This component is a bin that is capable of transcoding  -->
-<!--     the input audio or video stream into a desired format specified with simple  -->
-<!--     declarative API. This will spare you from the task of: -->
-<!--     - manually ensuring the stream is suited for the decoder,  -->
-<!--     - setting up the decoder,  -->
-<!--     - ensuring the raw video is suited for the encoder,  -->
-<!--     - setting up the encoder, -->
-<!--     - ensuring the encoded output is suitable for MP4 muxing. -->
-<!--     Instead, you'll only need to specify the output format, and the Transcoder -->
-<!--     will handle the machinery itself. -->
-<!-- - `:membrane_mp4_plugin` - Plugin that provides components for muxing and  -->
-<!--   demuxing MP4 containers: -->
-<!--   * `:Membrane.MP4.Muxer.ISOM` - A component that takes in a single or multiple -->
-<!--     input streams and muxes them into an MP4 container, ready to be saved to a -->
-<!--     file. -->
-<!---->
 That's all the components need for this task. Time to learn how to build a
 pipeline!
 
@@ -247,6 +212,35 @@ graph LR
   D[:my_other_source] --> B
 ```
 
+Another thing you'll need for this task is to have more control of
+the pads - the connectors of your pipeline. When
+you link two components, you can specify a name and additional properties of their input or
+output pads by using [`via_in/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_in/3)
+and [`via_out/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_out/3)
+respectively. These functions take three arguments - a builder, a pad identifier
+and a keyword list of properties, one of them being `:options`:
+
+```elixir
+spec = 
+  [
+    child(:my_source, MySource)
+    |> via_out(:some_output, options: [some_pad_option: :some_value])
+    |> child(:my_filter, MyFilter)
+    ...
+  ]
+```
+
+In this pipeline it's explicitly stated that `:my_source`'s output pad called `:some_output` will
+be connected to `:my_filter`'s default input pad (`:input`). Another thing
+that's happening is that `:some_pad_option` option of pad `:some_output` is set to `:some_value`.
+
+Components define pad options for more precise control of the
+incoming or outgoing streams - 
+[`via_in/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_in/3)
+and [`via_out/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_out/3)
+are the way to actually pass these options to the pads. Components can also have
+multiple different pads, and these functions allow to specify which one to link. 
+
 Last thing. Almost all components define _options_, which can be passed when they're
 created. To do that, pass a component's struct instead of a module in `child/2` and
 `child/3` functions:
@@ -291,7 +285,8 @@ This will create `workshop_pipeline.ex` file in `lib/` directory and inside it a
 skeleton of a pipeline, with the main module being called `WorkshopPipeline`. Don't get
 intimidated by the amount of generated comments, they're mostly optional
 callbacks, useful only in specific circumstances. The core of what you'll need for
-this task can be done inside `handle_init/2` callback. 
+this task can be done inside `handle_init/2` callback, which executes when the
+Pipeline is initialized. 
 
 The pipeline will be a bit more complex than the
 shown examples, but not by much. You need to figure out how the components you

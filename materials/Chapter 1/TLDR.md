@@ -1,11 +1,12 @@
 # Chapter 1 - Codecs, containers and pipelines - TLDR
 
-README goes over everything in detail - this file will be more concise 
+[README.md](./README.md) goes over everything in detail - this file will be more concise 
 and won't explain everything step by step. If you feel like you understand
 everything needed for this chapter then this version should suffice, however if
 you are ever unsure about something, it's probably explained in the README.
 
 ## Task
+
 Your task is to create a pipeline that will read audio from an MP3 file,
 VP8 video from an IVF file, transcode them into AAC and H264 respectively, and
 mux them into a single MP4 container file.
@@ -55,6 +56,12 @@ you can refer to it by it's name with
 [`get_child/2`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#get_child/2)
 (or [`get_child/1`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#get_child/1) if it's a source).
 
+If you need more control over pads - the connectors between components - you can
+use  [`via_in/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_in/3)
+and [`via_out/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_out/3).
+These functions take three arguments - a builder, a pad identifier
+and a keyword list of properties, one of them being `:options`.
+
 Last thing. Almost all components define _options_, which can be passed when they're
 created. To do that, pass a component's struct instead of a module in `child/2` and
 `child/3` functions.
@@ -65,6 +72,7 @@ An example pipeline can be defined like this:
 spec = 
   [
     child(:my_source, %MySource{some_element_option: :some_value})
+    |> via_out(:some_output, options: [some_pad_option: :some_value])
     |> child(:my_filter, MyFilter)
     |> child(:my_sink, MySink),
     child(:my_other_source, MySource)
