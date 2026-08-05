@@ -36,20 +36,19 @@ this:
 ```
 Resolution: (3, 3)
 
-Memory layout: 
-<<1, 2, 3, 4, 5, 6, 7, 8, 9>>
+Pixels in memory: 
+[1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-Image pixel layout:
- ---------
-| 1, 2, 3 |
-| 4, 5, 6 |
-| 7, 8, 9 |
- ---------
+Pixels on a frame:
+ -------
+| 1 2 3 |
+| 4 5 6 |
+| 7 8 9 |
+ -------
 ```
 
-Let's assume a pixel takes up a single byte in memory, which is true most of the
-time, and will be true for your task. A pixel at coordinates `(x, y)` will have
-an address of `y * width + x` - first you move over `y` rows which take up `width`
+Let's assume a pixel takes up `n` bytes in memory. A pixel at coordinates `(x, y)`
+will have an address of `(y * width + x) * n` - first you move over `y` rows which take up `width`
 pixels, and then you access the `x`th pixel in the `y`th row.
 
 #### Pixel format
@@ -71,36 +70,21 @@ then added together, resulting in the final color. The pixels in a typical
 monitor are made out of three parts, each one emitting a primary color with a
 given intensity - that's one of the ways how the RGB addition can occur.
 
-Let's talk about how the RGB frames are represented in memory. Each of the primary
-colors receives its own _plane_, which is essentially an image of the same
-resolution as the combined one, but only containing information about the
-primary color. The pixels in a plane are organized in the same manner as presented in the 
-Resolution section - each pixel takes up a single byte and the image is stored by 
-rows. The planes themselves are located one after another in memory, like this:
+Let's talk about how the RGB frames are represented in memory. Each pixel gets three
+bytes, one for each of the primary colors. The pixels are organized like shown in the
+Resolution section: 
 
 ```
 Resolution: (2, 2)
-Memory layout: 
-<<1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12>>
 
-Image pixel layout:
-Red plane:
- ------
-| 1, 2 |
-| 3, 4 |
- ------
+Bytes in memory: 
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
-Green plane:
- ------ 
-| 5, 6 |
-| 7, 8 |
- ------
-
-Blue plane:
- --------
-|  9, 10 |
-| 11, 12 |
- --------
+Pixels on a frame:
+ -----------------
+| #010203 #040506 | 
+| #070809 #101112 | 
+ -----------------
 ```
 
 ### Color inversion
@@ -109,7 +93,7 @@ Great, you now know exactly how RGB images are stored in memory. Now, how do you
 invert colors of an image, what does this even mean? Inverting a color can be also
 called getting its [complementary color](https://en.wikipedia.org/wiki/Complementary_colors).
 Inverting a while image seem pretty complex at first, but it's really simple to
-achieve this - you just need to take each pixel from each plane and convert it 
+achieve this - you just need to take each color from each pixel and convert it 
 to it's complementary value, so that the sum of it and the original one will be equal
 to 255. When adding the resulting (_negative_) image to the original (_positive_) image
 pixel-wise, the result will be a totally white image, which is exactly what

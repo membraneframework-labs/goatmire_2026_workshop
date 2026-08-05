@@ -13,32 +13,21 @@ and plug it in the middle of the pipeline from the previous task.
 ### RGB 
 
 An RGB video stream is just a series of RGB images called _frames_. 
-You'll have access to a binaries containing each RGB frame. The memory is laid
-out first by color planes, then by rows and finally by columns, like this:
+You'll have access to a binaries containing each RGB frame. Each pixel gets
+three bytes, one for each of the primary colors. The pixels are laid out first 
+by rows, then by columns, like this:
 
 ```
 Resolution: (2, 2)
-Memory layout: 
-<<1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12>>
 
-Image pixel layout:
-Red plane:
- ------
-| 1, 2 |
-| 3, 4 |
- ------
+Bytes in memory: 
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
-Green plane:
- ------ 
-| 5, 6 |
-| 7, 8 |
- ------
-
-Blue plane:
- --------
-|  9, 10 |
-| 11, 12 |
- --------
+Pixels on a frame:
+ -----------------
+| #010203 #040506 | 
+| #070809 #101112 | 
+ -----------------
 ```
 
 ### Color inversion
