@@ -200,13 +200,13 @@ should look similarly to this, where `invert_frame/1` is a function accepting a
 raw frame and returning its negative:
 
 ```elixir
-@impl true
-def handle_buffer(:input, buffer, _ctx, state) do
-  inverted_frame = invert_frame(buffer.payload)
-  buffer = %Buffer{buffer | payload: inverted_frame}
+  @impl true
+  def handle_buffer(:input, %Membrane.Buffer{} = buffer, _ctx, state) do
+    inverted_frame = invert_frame(buffer.payload)
+    buffer = %Membrane.Buffer{buffer | payload: inverted_frame}
 
-  {[buffer: {:output, buffer}], state}
-end
+    {[buffer: {:output, buffer}], state}
+  end
 ```
 
 ### Plugging the element

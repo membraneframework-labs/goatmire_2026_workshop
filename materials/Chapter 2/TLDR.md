@@ -93,13 +93,13 @@ be found at `buffer.payload`. Once that's done, return a
 action to send the buffer with inverted frame on the `:output` pad.
 
 ```elixir
-@impl true
-def handle_buffer(:input, buffer, _ctx, state) do
-  inverted_frame = invert_frame(buffer.payload)
-  buffer = %Buffer{buffer | payload: inverted_frame}
+  @impl true
+  def handle_buffer(:input, %Membrane.Buffer{} = buffer, _ctx, state) do
+    inverted_frame = invert_frame(buffer.payload)
+    buffer = %Membrane.Buffer{buffer | payload: inverted_frame}
 
-  {[buffer: {:output, inverted_buffer}], state}
-end
+    {[buffer: {:output, buffer}], state}
+  end
 ```
 
 ### Plugging the element
