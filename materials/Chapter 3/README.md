@@ -5,6 +5,10 @@ are, how they flow through the pipeline and how components decide _how fast_
 the media should flow. You will then put this knowledge to use by turning the
 pipeline from Chapter 2 into a real-time player with an ad-insertion feature.
 
+This file contains a detailed and pretty lengthy theoretical introduction and
+explanation of the tasks - a more concise version can be found in
+[TLDR.md](./TLDR.md).
+
 ## Theory overview
 
 TODO
@@ -17,7 +21,7 @@ This chapter consists of three tasks that are built on top of each other:
 2. [Task 3.2](#task-32---insert-an-ad) - write a custom element that inserts an ad into the video stream.
 3. [Task 3.3](#task-33---bring-the-audio-back) - play audio through the speakers and insert an ad into it too.
 
-Start from the `chapter-3` branch, which contains the solution to Chapter 2.
+Start from the `chapter-2-checkpoint` branch, which contains the solution to Chapter 2.
 The final solution can be found on the `chapter-3-checkpoint` branch.
 
 ### Building blocks
@@ -40,17 +44,17 @@ ones you'll need for all three tasks:
 Remember to run `mix deps.get` after adding them.
 
 - `:membrane_realtimer_plugin` - Plugin that provides a single component:
-  * `Membrane.Realtimer` - A filter that holds every buffer until its timestamp
+  * [`Membrane.Realtimer`](https://membrane-realtimer-plugin.hexdocs.pm/Membrane.Realtimer.html) - A filter that holds every buffer until its timestamp
     is reached and only then passes it on. In other words, it makes the stream
     flow in real time, instead of as fast as the upstream can produce it.
 - `:membrane_sdl_plugin` - Plugin for displaying video with the SDL library:
-  * `Membrane.SDL.Player` - A sink that opens a window and draws the raw video
+  * [`Membrane.SDL.Player`](https://membrane-sdl-plugin.hexdocs.pm/Membrane.SDL.Player.html) - A sink that opens a window and draws the raw video
     frames it receives. It accepts only raw video in the `I420` pixel format.
 - `:membrane_portaudio_plugin` - Plugin for playing and capturing audio with the PortAudio library:
-  * `Membrane.PortAudio.Sink` - A sink that plays received raw audio through the
+  * [`Membrane.PortAudio.Sink`](https://membrane-portaudio-plugin.hexdocs.pm/Membrane.PortAudio.Sink.html) - A sink that plays received raw audio through the
     default audio device.
 - `:membrane_raw_audio_parser_plugin` - Plugin for dealing with raw audio streams:
-  * `Membrane.RawAudioParser` - A filter that, among other things, can compute
+  * [`Membrane.RawAudioParser`](https://membrane-raw-audio-parser-plugin.hexdocs.pm/Membrane.RawAudioParser.html) - A filter that, among other things, can compute
     timestamps of raw audio buffers based on their size and the audio format,
     which is exactly what you need if the stream doesn't have timestamps yet.
 
