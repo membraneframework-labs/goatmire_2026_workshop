@@ -1,13 +1,15 @@
 defmodule StreamSwitcher do
   @moduledoc """
-  Forwards buffers from the `:main` input until `switch_time` is reached, then forwards
-  buffers from the `:ad` input until it ends, then resumes forwarding `:main` from the frame
-  at which it was paused. If `:main` ended before the ad, the output ends with the ad.
+  Forwards buffers from the `:main` input up to and including the first buffer with
+  `pts >= switch_time`, then forwards buffers from the `:ad` input until it ends, then resumes
+  forwarding `:main` from where it was paused. If `:main` ended before the ad, the output ends
+  with the ad.
 
   Timestamps of the output stream are shifted at each switch so that the output timeline
   is continuous.
 
-  Only the currently active input is demanded from, so the inactive stream is not pulled ahead.
+  Only the currently active input is demanded from, one buffer at a time, so the inactive
+  stream is never pulled ahead and no buffer arrives after the active input has changed.
 
   Both inputs must carry the same stream format. It is sent to the output only once, when
   received for the first time; a differing format on the other input raises.
@@ -46,7 +48,6 @@ defmodule StreamSwitcher do
             active: :main | :ad,
             main_eos?: boolean(),
             ad_eos?: boolean(),
-            pending_main_buffers: [Buffer.t()],
             offset: Time.t() | nil,
             # Assumes constant frame rate: the duration of the last frame is estimated
             # from the gap between it and the frame before it.
@@ -60,7 +61,6 @@ defmodule StreamSwitcher do
                   active: :main,
                   main_eos?: false,
                   ad_eos?: false,
-                  pending_main_buffers: [],
                   offset: nil,
                   last_frame: nil
                 ]
@@ -97,33 +97,24 @@ defmodule StreamSwitcher do
   end
 
   @impl true
-  def handle_demand(:output, size, :buffers, _ctx, %State{active: active} = state) do
-    {[demand: {active, size}], state}
+  def handle_demand(:output, _size, :buffers, _ctx, %State{active: active} = state) do
+    {[demand: {active, 1}], state}
   end
 
   @impl true
   def handle_buffer(:main, %Buffer{} = buffer, _ctx, %State{active: :main} = state) do
+    {actions, state} = forward(buffer, state)
+
     if state.ad_eos? or buffer.pts < state.switch_time do
-      forward(buffer, state)
+      {actions, state}
     else
-      state = %State{state | pending_main_buffers: [buffer]}
-      switch_to(:ad, state)
+      {actions, switch_to(:ad, state)}
     end
   end
 
   @impl true
   def handle_buffer(:ad, %Buffer{} = buffer, _ctx, %State{active: :ad} = state) do
     forward(buffer, state)
-  end
-
-  @impl true
-  def handle_buffer(:main, %Buffer{} = buffer, _ctx, %State{active: :ad} = state) do
-    {[], %State{state | pending_main_buffers: state.pending_main_buffers ++ [buffer]}}
-  end
-
-  @impl true
-  def handle_buffer(:ad, _buffer, _ctx, %State{active: :main} = state) do
-    {[], state}
   end
 
   @impl true
@@ -139,32 +130,13 @@ defmodule StreamSwitcher do
   defp maybe_terminate(state) do
     cond do
       state.main_eos? and state.ad_eos? -> {[end_of_stream: :output], state}
-      state.main_eos? -> switch_to(:ad, state)
-      true -> switch_to(:main, state)
+      state.main_eos? -> {[redemand: :output], switch_to(:ad, state)}
+      true -> {[redemand: :output], switch_to(:main, state)}
     end
   end
 
   defp switch_to(pad, %State{} = state) do
-    state = %State{state | active: pad, offset: nil}
-
-    {buffer_actions, state} =
-      case pad do
-        :main ->
-          flush_pending_buffers(state)
-
-        :ad ->
-          {[], state}
-      end
-
-    {buffer_actions ++ [redemand: :output], state}
-  end
-
-  defp flush_pending_buffers(%State{} = state) do
-    Enum.flat_map_reduce(
-      state.pending_main_buffers,
-      %State{state | pending_main_buffers: []},
-      &forward/2
-    )
+    %State{state | active: pad, offset: nil}
   end
 
   defp forward(%Buffer{} = buffer, %State{offset: nil} = state) do
@@ -188,6 +160,7 @@ defmodule StreamSwitcher do
         {last_pts, _estimated_duration} -> out_pts - last_pts
       end
 
-    {[buffer: {:output, buffer}], %State{state | last_frame: {out_pts, estimated_duration}}}
+    {[buffer: {:output, buffer}, redemand: :output],
+     %State{state | last_frame: {out_pts, estimated_duration}}}
   end
 end
