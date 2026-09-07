@@ -29,7 +29,9 @@ defmodule Goatmire2026Workshop.MixProject do
       {:membrane_mp4_plugin, "~> 0.36.9"},
       # Chapter 3 deps
       {:membrane_realtimer_plugin, "~> 0.11.1"},
-      {:membrane_sdl_plugin, "~> 0.18.8"}
+      {:membrane_sdl_plugin, "~> 0.18.8"},
+      {:membrane_portaudio_plugin, "~> 0.19.6"},
+      {:membrane_raw_audio_parser_plugin, "~> 0.5.0"}
     ]
   end
 end

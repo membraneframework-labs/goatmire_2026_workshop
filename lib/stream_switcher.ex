@@ -28,7 +28,8 @@ defmodule StreamSwitcher do
 
   def_output_pad :output,
     accepted_format: _any,
-    flow_control: :manual
+    flow_control: :manual,
+    demand_unit: :buffers
 
   def_options switch_time: [
                 spec: Time.t(),
