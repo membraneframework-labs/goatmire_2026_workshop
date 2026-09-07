@@ -26,7 +26,10 @@ defmodule Goatmire2026Workshop.MixProject do
       # {:membrane_transcoder_plugin, "~> 0.4.0"},
       {:membrane_transcoder_plugin,
        github: "membraneframework/membrane_transcoder_plugin", branch: "transcoder-api-rework"},
-      {:membrane_mp4_plugin, "~> 0.36.9"}
+      {:membrane_mp4_plugin, "~> 0.36.9"},
+      # Chapter 3 deps
+      {:membrane_realtimer_plugin, "~> 0.11.1"},
+      {:membrane_sdl_plugin, "~> 0.18.8"}
     ]
   end
 end
