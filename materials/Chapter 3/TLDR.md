@@ -42,21 +42,20 @@ Remember to terminate the pipeline when the player reports end of stream.
 Write a `StreamSwitcher` filter with `:main` and `:ad` input pads and one
 `:output` pad. It takes a `switch_time` option (a `Membrane.Time` value) and:
 
-1. forwards `:main` until a buffer with `pts >= switch_time` arrives - keep that buffer,
+1. forwards `:main` up to and including the first buffer with `pts >= switch_time`,
 2. forwards `:ad` until it ends,
-3. forwards `:main` again, starting with the buffers kept in step 1,
+3. forwards `:main` again from where it was paused,
 4. ends the output when both inputs have ended. If `:main` ends before the
    switch time, switch to `:ad` right away and end after it.
 
 Key points:
 
 - **Flow control.** Declare all pads with `flow_control: :manual`. In
-  `handle_demand/5` return `demand: {active_pad, size}` for the currently active
-  input only. Return `redemand: :output` whenever the active pad changes.
-  Demand is not cancelled by switching - buffers already demanded from `:main`
-  may still arrive after you switched to `:ad`. Don't drop them, store them
-  together with the buffer that triggered the switch and emit them all when
-  switching back.
+  `handle_demand/5` return `demand: {active_pad, 1}` for the currently active
+  input only - one buffer at a time, so nothing arrives from `:main` after
+  you've switched to `:ad`. Return `redemand: :output` along with every
+  buffer you send and whenever the active pad changes, otherwise
+  `handle_demand/5` won't be called again.
 - **Timestamps.** Output timeline must be continuous, or the Realtimer will
   stall. At each switch compute an offset so the first buffer of the new
   segment lands one frame after the last buffer sent, and add it to `pts` (and `dts`) of

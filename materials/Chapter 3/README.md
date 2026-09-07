@@ -108,9 +108,9 @@ same format as `assets/bbb_vp8.ivf` - VP8 in an IVF container, 480x270, 25 frame
 The element, let's call it `StreamSwitcher`, should:
 - have two input pads - `:main` and `:ad` - and one output pad,
 - have an option with the timestamp of the `:main` stream at which the ad should be inserted (see [`Membrane.Time`](https://membrane-core.hexdocs.pm/Membrane.Time.html)),
-- forward buffers from `:main` until the switch time is reached,
+- forward buffers from `:main` up to and including the first one whose timestamp is at or past the switch time,
 - then forward all buffers from `:ad` until it ends,
-- then go back to forwarding `:main` - starting from the very frame at which it was paused, so that no frames are lost,
+- then go back to forwarding `:main` from where it was paused, so that no frames are lost,
 - end the output stream when both inputs have ended. If `:main` ends before the ad is being played, the switch should happen immediately afterwards, and the stream should end after the ad.
 
 Then add a second branch to the pipeline that reads and decodes the ad, and
@@ -149,13 +149,20 @@ arrives on an input pad until your element asks for it with the
 and you get to decide from which pad to demand. Keep track of which input is
 currently _active_ and, whenever the downstream element asks you for data in the
 [`handle_demand/5`](https://membrane-core.hexdocs.pm/Membrane.Element.WithOutputPads.html#c:handle_demand/5)
-callback, forward that demand to the active pad only.
+callback, demand from the active pad only.
 
-Whenever the active pad changes, return the
-[`:redemand` action](https://membrane-core.hexdocs.pm/Membrane.Element.Action.html#t:redemand/0)
-to let Membrane call `handle_demand/5` again so you can demand from the new pad.
+Demand exactly one buffer at a time, regardless of how much was demanded from
+you. This way at most one buffer is on its way, and since you demand the next
+one only after you've handled the previous one, you always know which pad it
+will come from - no buffer can arrive from `:main` after you've decided to
+switch to `:ad`.
 
-See the [flow control documentation](https://membrane-core.hexdocs.pm/pads.html#flow-control)
+Membrane won't call `handle_demand/5` again by itself after you've sent a buffer.
+Return the [`:redemand` action](https://membrane-core.hexdocs.pm/Membrane.Element.Action.html#t:redemand/0)
+along with every buffer you send and whenever the active pad changes, so that
+`handle_demand/5` is called again and you can demand the next buffer.
+
+See the [flow control guide](https://membrane-core.hexdocs.pm/06_flow_control.html)
 for the details of the `:manual` mode.
 </details>
 
@@ -163,19 +170,10 @@ for the details of the `:manual` mode.
 <summary><b>When exactly should I switch?</b></summary>
 
 Compare the `pts` (presentation timestamp) of each buffer coming from `:main`
-with the switch time from the options. The first buffer that is _not_ after the
-switch time is the first frame that should be played _after_ the ad. Don't drop
-it - store it in the state and emit it when you switch back to `:main`.
-</details>
-
-<details>
-<summary><b>Buffers from <code>:main</code> keep coming after I switched to <code>:ad</code></b></summary>
-
-That's expected. Switching the active pad doesn't cancel the demand you have
-already made - if you asked `:main` for a few buffers and switched after the
-first one, the rest will still be delivered. Treat them the same way as the
-buffer that triggered the switch: keep them in the state, in order, and emit
-them all before demanding anything new from `:main` once the ad is over.
+with the switch time from the options. Forward the buffer as usual and, if its
+`pts` is at or past the switch time, mark `:ad` as the active pad - the next
+demand will go there. No buffer needs to be held back, so there's nothing to
+store apart from which pad is active.
 </details>
 
 <details>
