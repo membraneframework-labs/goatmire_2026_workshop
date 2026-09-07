@@ -103,18 +103,22 @@ defmodule StreamSwitcher do
 
   @impl true
   def handle_buffer(:main, %Buffer{} = buffer, _ctx, %State{active: :main} = state) do
-    {actions, state} = forward(buffer, state)
+    {buffer_actions, state} = forward(buffer, state)
 
-    if state.ad_eos? or buffer.pts < state.switch_time do
-      {actions, state}
-    else
-      {actions, switch_to(:ad, state)}
-    end
+    {next_actions, state} =
+      if state.ad_eos? or buffer.pts < state.switch_time do
+        {[redemand: :output], state}
+      else
+        switch_to(:ad, state)
+      end
+
+    {buffer_actions ++ next_actions, state}
   end
 
   @impl true
   def handle_buffer(:ad, %Buffer{} = buffer, _ctx, %State{active: :ad} = state) do
-    forward(buffer, state)
+    {buffer_actions, state} = forward(buffer, state)
+    {buffer_actions ++ [redemand: :output], state}
   end
 
   @impl true
@@ -130,13 +134,13 @@ defmodule StreamSwitcher do
   defp maybe_terminate(state) do
     cond do
       state.main_eos? and state.ad_eos? -> {[end_of_stream: :output], state}
-      state.main_eos? -> {[redemand: :output], switch_to(:ad, state)}
-      true -> {[redemand: :output], switch_to(:main, state)}
+      state.main_eos? -> switch_to(:ad, state)
+      true -> switch_to(:main, state)
     end
   end
 
   defp switch_to(pad, %State{} = state) do
-    %State{state | active: pad, offset: nil}
+    {[redemand: :output], %State{state | active: pad, offset: nil}}
   end
 
   defp forward(%Buffer{} = buffer, %State{offset: nil} = state) do
@@ -160,7 +164,6 @@ defmodule StreamSwitcher do
         {last_pts, _estimated_duration} -> out_pts - last_pts
       end
 
-    {[buffer: {:output, buffer}, redemand: :output],
-     %State{state | last_frame: {out_pts, estimated_duration}}}
+    {[buffer: {:output, buffer}], %State{state | last_frame: {out_pts, estimated_duration}}}
   end
 end
