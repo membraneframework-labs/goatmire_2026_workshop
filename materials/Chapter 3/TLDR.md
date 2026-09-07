@@ -44,7 +44,7 @@ Write a `StreamSwitcher` filter with `:main` and `:ad` input pads and one
 
 1. forwards `:main` until a buffer with `pts >= switch_time` arrives - keep that buffer,
 2. forwards `:ad` until it ends,
-3. forwards `:main` again, starting with the buffer kept in step 1,
+3. forwards `:main` again, starting with the buffers kept in step 1,
 4. ends the output when both inputs have ended. If `:main` ends before the
    switch time, switch to `:ad` right away and end after it.
 
@@ -53,6 +53,10 @@ Key points:
 - **Flow control.** Declare all pads with `flow_control: :manual`. In
   `handle_demand/5` return `demand: {active_pad, size}` for the currently active
   input only. Return `redemand: :output` whenever the active pad changes.
+  Demand is not cancelled by switching - buffers already demanded from `:main`
+  may still arrive after you switched to `:ad`. Don't drop them, store them
+  together with the buffer that triggered the switch and emit them all when
+  switching back.
 - **Timestamps.** Output timeline must be continuous, or the Realtimer will
   stall. At each switch compute an offset so the first buffer of the new
   segment lands one frame after the last buffer sent, and add it to `pts` (and `dts`) of

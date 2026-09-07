@@ -169,6 +169,16 @@ it - store it in the state and emit it when you switch back to `:main`.
 </details>
 
 <details>
+<summary><b>Buffers from <code>:main</code> keep coming after I switched to <code>:ad</code></b></summary>
+
+That's expected. Switching the active pad doesn't cancel the demand you have
+already made - if you asked `:main` for a few buffers and switched after the
+first one, the rest will still be delivered. Treat them the same way as the
+buffer that triggered the switch: keep them in the state, in order, and emit
+them all before demanding anything new from `:main` once the ad is over.
+</details>
+
+<details>
 <summary><b>The ad plays fine, but the video "jumps" or freezes after the switch</b></summary>
 
 Remember `Membrane.Realtimer` from the previous task? It releases buffers based
