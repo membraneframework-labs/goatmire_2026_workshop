@@ -67,6 +67,110 @@ element from the `membrane_realtimer_plugin` package.
 
 ### Flow control
 
+We often refer to this "pacing" as _flow control_. `Membrane.Realtimer` provides one kind of it,
+based on timestamps, but it's not the only one possible - and it's not only about playback.
+No matter what kind of processing is done, some flow control is needed to keep the resource usage
+bounded. Every element in a pipeline is a separate process with its own mailbox. If a fast
+producer (say, a file source) were allowed to send data to a slow consumer (say, a video encoder)
+without any limits, the consumer's mailbox would grow without bound, the memory would fill up with
+buffers waiting to be processed and the whole system would eventually go down. The fastest element
+in a pipeline shouldn't dictate the pace - the slowest one should. The mechanism that lets the
+consumer tell the producer how much it can take is called _backpressure_, and Membrane implements
+it with _demands_ - see the [flow control guide](https://membrane-core.hexdocs.pm/06_flow_control.html).
+
+Membrane allows you to configure the flow control of your element with the `flow_control` option
+of its pads (both input and output ones, see
+[`def_input_pad`](https://membrane-core.hexdocs.pm/Membrane.Element.WithInputPads.html#def_input_pad/2)
+and [`def_output_pad`](https://membrane-core.hexdocs.pm/Membrane.Element.WithOutputPads.html#def_output_pad/2)).
+It can be set to one of three values (see [`Membrane.Pad.flow_control/0`](https://membrane-core.hexdocs.pm/Membrane.Pad.html#t:flow_control/0)):
+
+* `:push` - no backpressure at all. An element with a `:push` output pad sends buffers whenever
+  it wants, and an element with a `:push` input pad has to process whatever comes, as fast as it
+  comes. Use it when the pace is dictated by the outside world anyway, e.g. for a source receiving
+  packets from the network.
+* `:manual` - a _pull_ mode, in which the demand is handled by the element itself. Nothing
+  arrives on a `:manual` input pad until the element demands it. The developer gets full control
+  over which pad to read from, how much and when, at the price of having to implement it by hand.
+* `:auto` - automatically adjusts the flow control to the needs of the pipeline. If the element is
+  fed by a `:push` source, its `:auto` pads effectively work in push mode as well. Otherwise they
+  work in _pull mode_, with the demand handled by Membrane: the framework keeps demanding on the
+  element's `:auto` input pads as long as there is demand on all of its `:auto` output pads, so the
+  element only implements `handle_buffer` and the whole chain of such elements adapts to the pace
+  of the slowest one.
+
+Most of the elements are fine with `:auto` flow control, but sometimes you need custom logic that
+can only be expressed with manual demands. Here's how the most common case - a filter with both
+pads in `:manual` mode - looks like:
+
+```elixir
+defmodule PassThrough do
+  use Membrane.Filter
+
+  def_input_pad :input, accepted_format: _any, flow_control: :manual, demand_unit: :buffers
+  def_output_pad :output, accepted_format: _any, flow_control: :manual
+
+  @impl true
+  def handle_demand(:output, size, :buffers, _ctx, state) do
+    {[demand: {:input, size}], state}
+  end
+
+  @impl true
+  def handle_buffer(:input, buffer, _ctx, state) do
+    {[buffer: {:output, buffer}], state}
+  end
+end
+```
+
+For output pads in this mode, you implement
+[`handle_demand/5`](https://membrane-core.hexdocs.pm/Membrane.Element.WithOutputPads.html#c:handle_demand/5) -
+it's called when the element linked to your output asks for data, and it's your job to satisfy
+that demand. In a source you would read the data from some "side channel" (like a file) and send
+it. In a filter you would typically propagate the demand upstream, as above.
+
+For input pads, you return the [`:demand` action](https://membrane-core.hexdocs.pm/Membrane.Element.Action.html#t:demand/0)
+that asks the element linked to your input for the given number of buffers or bytes (depending on the
+pad's `demand_unit`). The number is "declarative" in its nature - returning `demand: {:input, 10}`
+and then `demand: {:input, 20}` will not ask for 10 + 20 buffers, the demand will be set to the
+latter value, `20`. After the demand is requested, you can expect the demanded amount of data to
+arrive - for `:buffers`, `handle_buffer` will be called N times for a demand of size N, unless the
+stream ends earlier. Note how precise this is - you are **guaranteed** not to receive more
+buffers/bytes than requested.
+
+> Since `membrane_core` 1.3 there is also a way to express the demand in timestamp units (i.e. ask
+> for 30 seconds of a stream). This mechanism behaves differently than demanding in bytes or buffers -
+> if you want to know more, refer to the [`:demand` action docs](https://membrane-core.hexdocs.pm/Membrane.Element.Action.html#t:demand/0).
+
+You are expected to satisfy the whole demand on your output, so you need to take care of the
+scenario in which the buffers you demanded and received aren't enough to do so - for example because you
+dropped some of them. Membrane provides a helper for that, the
+[`:redemand` action](https://membrane-core.hexdocs.pm/Membrane.Element.Action.html#t:redemand/0).
+Returning it for an output pad with manual flow control calls `handle_demand/5` for this pad once
+again (as long as the demand hasn't been satisfied yet), with the updated demand value, so you get
+another chance to ask for more data on the input - and your demand logic stays in a single place.
+Here's a filter that drops every other buffer:
+
+```elixir
+  @impl true
+  def handle_demand(:output, size, :buffers, _ctx, state) do
+    {[demand: {:input, size}], state}
+  end
+
+  @impl true
+  def handle_buffer(:input, buffer, _ctx, %{counter: counter} = state) do
+    actions =
+      if rem(counter, 2) == 0,
+        do: [buffer: {:output, buffer}],
+        else: [redemand: :output]
+
+    {actions, %{state | counter: counter + 1}}
+  end
+```
+
+When a buffer is dropped, the output demand stays unsatisfied, `:redemand` triggers `handle_demand/5`
+again and the filter asks for more. In this particular case you could obviously skip `:redemand`
+and demand `2 * size` right away, since you know upfront that half of the buffers will be dropped.
+But often you don't know in advance how many input buffers it will take to produce one output
+buffer and then it's more natural to demand what you've been asked for and let `:redemand` take care of the rest.
 
 ## The tasks
 
