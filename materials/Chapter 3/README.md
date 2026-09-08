@@ -11,7 +11,62 @@ explanation of the tasks - a more concise version can be found in
 
 ## Theory overview
 
-TODO
+### Timestamps
+
+Handling time is the key to handling multimedia! In most cases it's crucial to process and deliver
+data at the desired time.
+Each [`Membrane.Buffer`](https://membrane-core.hexdocs.pm/Membrane.Buffer.html) can be assigned:
+* **PTS** - _presentation timestamp_, stored in the `pts` field - it tells you when to _present_ a given chunk of multimedia,
+* **DTS** - _decoding timestamp_, stored in the `dts` field - it tells you when to _decode_ a given chunk of multimedia.
+
+Both are expressed with [`Membrane.Time`](https://membrane-core.hexdocs.pm/Membrane.Time.html).
+
+These two might differ in some scenarios, especially when so called _B-frames_ are used in video codecs.
+A B-frame is encoded relative to frames that are presented both before and after it. As a result,
+some frames have to be decoded earlier than they are presented, so that the frames which depend on
+them can be decoded in time.
+
+Timestamps of media chunks (like video frames or chunks of audio samples) are usually stored in
+multimedia containers (like MP4) - e.g. a plain H264 stream does not contain any timestamps.
+Sometimes both PTS and DTS are present, sometimes only one of them, and sometimes none of them -
+in most cases it depends on the phase of multimedia processing (e.g. right after reading an .mp4 file
+with [`Membrane.File.Source`](https://membrane-file-plugin.hexdocs.pm/Membrane.File.Source.html) we
+obviously won't have any of them available - they will appear only after demuxing).
+
+Missing timestamps can be restored to some extent, provided that the stream has a constant
+sampling rate. Then every chunk carries its own duration - the number of samples divided by the
+sampling rate - and the timestamp of a chunk is just the sum of the durations of all the chunks
+before it. What can't be restored is the offset of the whole stream, i.e. at which point in time it
+starts - if that information is simply not there, the restored timestamps usually start from zero.
+For audio the sampling rate is constant by nature, and that's what elements like
+[`Membrane.RawAudioParser`](https://membrane-raw-audio-parser-plugin.hexdocs.pm/Membrane.RawAudioParser.html)
+rely on - with its `overwrite_pts?` option set to `true`, it computes the `pts` of every buffer it
+passes through. For video the same trick works only if the frame rate is constant - with a variable
+frame rate there's no way to tell how long a frame should be displayed without a timestamp.
+That's why, on the contrary, the corresponding option of
+[`Membrane.H264.Parser`](https://membrane-h264-plugin.hexdocs.pm/Membrane.H264.Parser.html) is called
+`generate_best_effort_timestamps` - you have to provide the frame rate yourself, and the docs warn
+that the generated timestamps may be inaccurate and get out of sync with other media.
+
+Sometimes timestamps need to dictate the speed of processing, and sometimes they don't.
+For example, when you need to transcode a video provided as an .mp4 file and save it into another
+.mp4 file, you probably would like to do it as fast as possible. This class of scenarios is referred
+to as "offline processing".
+On the contrary, when the media is meant to be consumed as it flows - displayed to the user or sent to
+another peer - each chunk has to be delivered at the time its timestamp says. This is called
+"online processing".
+Sometimes the pacing comes for free, because the source itself is "online" - a camera producing a
+single frame every 1/30 of a second delivers its stream at exactly the speed at which it should be
+displayed.
+But when the source is a file, it can be read much faster than the media should be played, and
+without any pacing the viewer would see all the frames almost at once, which wouldn't make any sense.
+In such a case the stream has to be artificially slowed down to "real time" based on its timestamps.
+That's what so called "realtimers" do, and Membrane provides one as the
+[`Membrane.Realtimer`](https://membrane-realtimer-plugin.hexdocs.pm/Membrane.Realtimer.html)
+element from the `membrane_realtimer_plugin` package.
+
+### Flow control
+
 
 ## The tasks
 
