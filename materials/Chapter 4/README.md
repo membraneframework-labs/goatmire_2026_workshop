@@ -65,46 +65,14 @@ component. From the outside it looks just like an element - it has pads and you
 link it in the spec the same way. On the inside it has its own children and its
 own spec. Bins are the way to reuse a piece of a pipeline as a whole.
 
-The component you'll use in this chapter, `Boombox.Bin`, is a bin. It hides the
-whole WebRTC machinery - the signaling, the connection, the RTP packaging and
-the encoding or decoding - behind two pads.
-
-### Boombox
-
-[Boombox](https://github.com/membraneframework/boombox) is a tool built on top of
+The component you'll use in this chapter is a bin:
+[`Boombox.Bin`](https://hexdocs.pm/boombox/Boombox.Bin.html) from
+[Boombox](https://github.com/membraneframework/boombox), a tool built on top of
 Membrane for moving media between different formats and protocols: files, HLS,
-RTMP, RTSP, WebRTC and more. It can be used from the command line, as a plain
-Elixir function, or as a Membrane component:
-[`Boombox.Bin`](https://hexdocs.pm/boombox/Boombox.Bin.html). That's the form
-you'll use.
-
-`Boombox.Bin` can work as a sink or as a source, depending on which option you
-set:
-
-- With the `:output` option set, it is a sink. You link its `:input` pads and it
-  sends whatever it receives to the given destination.
-- With the `:input` option set, it is a source. It reads from the given
-  destination and you link its `:output` pads.
-
-Both pads are _dynamic_: they are created when you link them. There can be one
-pad for audio and one for video, and you say which is which with the `:kind`
-pad option:
-
-```elixir
-child(:my_video_source, MyVideoSource)
-|> via_in(:input, options: [kind: :video])
-|> child(:boombox, %Boombox.Bin{output: {:webrtc, "ws://localhost:8830"}})
-```
-
-A WebRTC destination is described with the `{:webrtc, url}` tuple. With a
-`ws://` URL, Boombox starts a WebSocket server on the given port and waits for
-a browser to connect and do the signaling. The pipeline will start working when
-the browser connects, and Boombox will report the end of its work by sending
-the `:processing_finished` notification to its parent.
-
-Notifications are the way children talk to the pipeline. A pipeline receives
-them in the [`handle_child_notification/4`](https://membrane-core.hexdocs.pm/Membrane.Pipeline.html#c:handle_child_notification/4)
-callback, which gets the notification and the name of the child that sent it.
+RTMP, RTSP, WebRTC and more. You tell it where the media should come from or go
+to, and it builds the right chain of elements for that protocol inside itself.
+The same two pads work whether the other end is a file, an RTMP server or a
+WebRTC peer.
 
 ## The tasks
 
@@ -113,27 +81,51 @@ This chapter consists of two tasks that are built on top of each other:
 1. [Task 4.1](#task-41---send-the-stream-to-the-browser) - send the output of the pipeline to the browser.
 2. [Task 4.2](#task-42---stream-from-the-browser) - use the camera and microphone from the browser as the input.
 
-Start from the `chapter-3-checkpoint` branch, which contains the solution to Chapter 3.
-The final solution can be found on the `chapter-4-checkpoint` branch.
+Continue with your project from Chapter 3. If your solution doesn't work, you can
+fall back on the `chapter-3-checkpoint` branch, which contains ours. The final
+solution of this chapter can be found on the `chapter-4-checkpoint` branch.
 
 ### Building blocks
 
-Add this dependency to `mix.exs` and run `mix deps.get`:
+Add these dependencies to `mix.exs` and run `mix deps.get`:
 
 ```elixir
   defp deps do
     [
       ...
       # Chapter 4 deps
-      {:boombox, github: "membraneframework/boombox", branch: "update-transcoder"}
+      {:boombox, github: "membraneframework/boombox", branch: "update-transcoder"},
+      {:bandit, "~> 1.12"}
     ]
 ```
 
-Boombox brings a lot of Membrane plugins with it, including the WebRTC one and
-a small web server ([Bandit](https://hexdocs.pm/bandit) with
-[Plug](https://hexdocs.pm/plug)), which you'll use to serve the web pages.
+- `:boombox` - Brings a lot of Membrane plugins with it, including the WebRTC one, and provides:
+  * [`Boombox.Bin`](https://hexdocs.pm/boombox/Boombox.Bin.html) - A bin that works
+    as a sink or as a source, depending on which option you set. With the `:output`
+    option set, it is a sink: you link its `:input` pads and it sends whatever it
+    receives to the given destination. With the `:input` option set, it is a source:
+    it reads from the given destination and you link its `:output` pads. Both pads
+    are _dynamic_, they are created when you link them. There can be one pad for
+    audio and one for video, and you say which is which with the `:kind` pad option:
 
-You'll also need two web pages. Both come from the Boombox repository and you
+    ```elixir
+    child(:my_video_source, MyVideoSource)
+    |> via_in(:input, options: [kind: :video])
+    |> child(:boombox, %Boombox.Bin{output: {:webrtc, "ws://localhost:8830"}})
+    ```
+
+    A WebRTC endpoint is described with the `{:webrtc, url}` tuple. With a `ws://`
+    URL, Boombox starts a WebSocket server on the given port and waits for a browser
+    to connect and do the signaling. The pipeline will start working when the browser
+    connects, and Boombox will report the end of its work by sending the
+    `:processing_finished` notification to its parent.
+- `:bandit` - [Bandit](https://hexdocs.pm/bandit) is an HTTP server, which you'll
+  use to serve the web pages together with [Plug](https://hexdocs.pm/plug), which
+  comes with it.
+
+### Serving the web pages
+
+You'll need two web pages. Both come from the Boombox repository and you
 can copy them to the `assets/` directory of the project:
 
 - [`webrtc_to_browser.html`](https://github.com/membraneframework/boombox/blob/master/examples/data/webrtc_to_browser.html) -
@@ -145,6 +137,25 @@ They are plain HTML files with a bit of JavaScript doing the signaling described
 above. Browsers allow a page to use the camera only when it comes from a secure
 origin, and `localhost` counts as one, so the pages will be served over HTTP.
 
+Put this at the top of `run_pipeline.exs`, before the pipeline is started:
+
+```elixir
+defmodule AssetsServer do
+  use Plug.Builder
+
+  plug(Plug.Static, at: "/", from: "assets")
+  plug(:not_found)
+
+  def not_found(conn, _opts), do: Plug.Conn.send_resp(conn, 404, "Not found")
+end
+
+{:ok, _server} = Bandit.start_link(plug: AssetsServer, port: 8000)
+```
+
+`Plug.Static` serves the files from the `assets/` directory under
+`http://localhost:8000/`. The server runs inside the same script, so it stops
+together with the pipeline.
+
 ### Task 4.1 - Send the stream to the browser
 
 Your first task is to play the output of the pipeline from Chapter 3 in the
@@ -155,9 +166,7 @@ To do so:
   everything that was there only for them,
 - send the output of both `StreamSwitcher`s to a single `Boombox.Bin` with a
   WebRTC output at `ws://localhost:8830`,
-- make the pipeline terminate when Boombox reports that it has finished,
-- serve the `assets/` directory over HTTP from `run_pipeline.exs`, so that you
-  can open the page in the browser.
+- make the pipeline terminate when Boombox reports that it has finished.
 
 Run the pipeline, open `http://localhost:8000/webrtc_to_browser.html` and click
 _Connect_. You should see the color-inverted Big Buck Bunny with sound, and the
@@ -194,9 +203,11 @@ is not live, so it paces it itself.
 <summary><b>How do I know when to terminate the pipeline?</b></summary>
 
 `Boombox.Bin` sends the `:processing_finished` notification to the pipeline
-when it has sent everything it received. Handle it in
-`handle_child_notification/4` and return the `:terminate` action there. Other
-notifications can be ignored:
+when it has sent everything it received. Notifications are the way children talk
+to the pipeline: it receives them in the
+[`handle_child_notification/4`](https://membrane-core.hexdocs.pm/Membrane.Pipeline.html#c:handle_child_notification/4)
+callback, together with the name of the child that sent them. Handle this one
+there and return the `:terminate` action. Other notifications can be ignored:
 
 ```elixir
 @impl true
@@ -212,29 +223,6 @@ end
 
 The `handle_element_end_of_stream/4` callback is no longer the right place - the
 sinks it was watching are gone.
-</details>
-
-<details>
-<summary><b>How do I serve the page?</b></summary>
-
-Put this at the top of `run_pipeline.exs`, before the pipeline is started:
-
-```elixir
-defmodule AssetsServer do
-  use Plug.Builder
-
-  plug(Plug.Static, at: "/", from: "assets")
-  plug(:not_found)
-
-  def not_found(conn, _opts), do: Plug.Conn.send_resp(conn, 404, "Not found")
-end
-
-{:ok, _server} = Bandit.start_link(plug: AssetsServer, port: 8000)
-```
-
-`Plug.Static` serves the files from the `assets/` directory under
-`http://localhost:8000/`. The server runs inside the same script, so it stops
-together with the pipeline.
 </details>
 
 <details>
@@ -255,8 +243,7 @@ To do so:
   `Boombox.Bin` with a WebRTC input at `ws://localhost:8829`,
 - decode both its streams and pass them through the rest of the pipeline as
   before: video through `ColorInverter` and the switcher, audio through
-  the timestamper and the switcher,
-- serve the second page too, so you can open it from the browser.
+  the timestamper and the switcher.
 
 Run the pipeline, open `http://localhost:8000/webrtc_from_browser.html`, click
 _Connect_ and allow the browser to use your camera and microphone. Then open
@@ -299,8 +286,6 @@ to `getUserMedia` so that the camera is requested at exactly 480x270:
 ```javascript
 const mediaConstraints = { video: { width: { exact: 480 }, height: { exact: 270 } }, audio: true };
 ```
-
-Leave a note at the top of the file saying that it was modified and why.
 </details>
 
 <details>
