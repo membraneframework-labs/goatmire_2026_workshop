@@ -3,8 +3,8 @@ defmodule WorkshopPipeline do
   use Membrane.Pipeline
 
   @switch_time Membrane.Time.seconds(15)
-  @input_signaling_url "ws://localhost:8829"
-  @output_signaling_url "ws://localhost:8830"
+  @input_signaling_url "ws://0.0.0.0:8829"
+  @output_signaling_url "ws://0.0.0.0:8830"
   # The main streams are live, so while the ad is played their buffers pile up in front of the
   # switchers. The default capacity (200 buffers) is not enough for a 14-second ad.
   @toilet_capacity 5000
