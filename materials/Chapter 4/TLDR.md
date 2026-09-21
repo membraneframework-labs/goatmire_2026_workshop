@@ -7,9 +7,10 @@ you are ever unsure about something, it's probably explained in the README.
 
 ## Tasks
 
-There are two tasks, the second one built on top of the first. Continue with
-your project from Chapter 3, or fall back on the `chapter-3-checkpoint` branch
-if it doesn't work. The final solution is on `chapter-4-checkpoint`.
+There are three tasks, Task 4.2 is optional (marked with a star) and Task 4.3
+works with or without it. Continue with your project from Chapter 3, or fall
+back on the `chapter-3-checkpoint` branch if it doesn't work. The final solution
+is on `chapter-4-checkpoint`.
 
 Add these deps to `mix.exs` and run `mix deps.get`:
 
@@ -63,7 +64,7 @@ Key points:
 Run `mix run run_pipeline.exs`, open `http://localhost:8000/webrtc_to_browser.html`
 and click _Connect_. Unmute the player to hear the audio.
 
-### Task 4.2 - Stream from the browser
+### Task 4.2* - Stream from the browser
 
 Replace the IVF and MP3 sources of the main streams with a single
 `Boombox.Bin{input: {:webrtc, "ws://localhost:8829"}}`. Take video from it with
@@ -86,3 +87,20 @@ Key points:
 Run the pipeline, open `http://localhost:8000/webrtc_from_browser.html`, click
 _Connect_ and allow camera access, then open
 `http://localhost:8000/webrtc_to_browser.html` and click _Connect_.
+
+### Task 4.3 - Stream to a co-attendee
+
+Let a co-attendee connect to your pipeline over the Wi-Fi network, then swap roles.
+
+- Change the host in the signaling URLs from `localhost` to `0.0.0.0`, so the
+  servers accept connections from the network.
+- Find your IP address (`ipconfig getifaddr en0` on macOS, `ip addr` on Linux)
+  and give it to your co-attendee.
+- They run their own `run_pipeline.exs`, open `http://localhost:8000/webrtc_to_browser.html`
+  and put `ws://YOUR_IP:8830` in the _Boombox URL_ field before clicking _Connect_.
+  With Task 4.2 done, they can also open `webrtc_from_browser.html` with
+  `ws://YOUR_IP:8829` and send you their camera.
+
+The pages are served from each laptop's own `localhost` because the camera works
+only on a secure origin. If the connection fails, check the firewall, make sure
+you are on the same network and turn off VPNs.

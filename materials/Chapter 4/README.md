@@ -70,10 +70,14 @@ WebRTC peer.
 
 ## The tasks
 
-This chapter consists of two tasks that are built on top of each other:
+This chapter consists of three tasks:
 
 1. [Task 4.1](#task-41---send-the-stream-to-the-browser) - send the output of the pipeline to the browser.
-2. [Task 4.2](#task-42---stream-from-the-browser) - use the camera and microphone from the browser as the input.
+2. [Task 4.2*](#task-42---stream-from-the-browser) - use the camera and microphone from the browser as the input.
+3. [Task 4.3](#task-43---stream-to-a-co-attendee) - let a co-attendee connect to your pipeline over the Wi-Fi network.
+
+Tasks marked with a star are optional. Task 4.3 works both with and without
+Task 4.2.
 
 Continue with your project from Chapter 3. If your solution doesn't work, you can
 fall back on the `chapter-3-checkpoint` branch, which contains ours. The final
@@ -226,7 +230,7 @@ That's expected. Boombox waits for a browser to connect before it starts
 sending media. Open the page and click _Connect_.
 </details>
 
-### Task 4.2 - Stream from the browser
+### Task 4.2* - Stream from the browser
 
 Now replace the files with a live source. The main video and audio should come
 from your camera and microphone, sent from the browser to the pipeline with
@@ -310,4 +314,71 @@ instead - think about how you would change `StreamSwitcher` to do that.
 That's correct. Closing the sender page ends the input stream, Boombox on the
 output side sends what is left and reports `:processing_finished`. Closing the
 player page closes the output connection, which ends the processing too.
+</details>
+
+### Task 4.3 - Stream to a co-attendee
+
+So far both the pipeline and the browser were running on your machine. Now let
+somebody else join in. Pair up with a co-attendee: they will connect to your
+pipeline from their laptop, over the workshop Wi-Fi, and you will connect to
+theirs.
+
+Your pipeline listens for the browser on `localhost` only, which nobody else
+can reach. To make it available to the network:
+- bind the WebRTC signaling servers to all network interfaces by changing the
+  host in their URLs from `localhost` to `0.0.0.0`,
+- find out the IP address of your machine on the Wi-Fi network,
+- give the address to your co-attendee.
+
+Your co-attendee runs their own `run_pipeline.exs`, opens their own copy of
+`webrtc_to_browser.html` at `http://localhost:8000` and, before clicking
+_Connect_, replaces `localhost` in the _Boombox URL_ field with your IP address,
+for example `ws://192.168.1.42:8830`. They should see the stream from your
+pipeline. If you did [Task 4.2](#task-42---stream-from-the-browser), they can also
+open `webrtc_from_browser.html` the same way, point it at port `8829` and send
+you their camera and microphone instead of yours.
+
+Then swap roles.
+
+#### Hints
+<details>
+<summary><b>How do I find my IP address?</b></summary>
+
+On macOS run `ipconfig getifaddr en0` (or check _System Settings > Wi-Fi > Details_).
+On Linux run `ip addr` and look for the address of your wireless interface,
+usually starting with `192.168.` or `10.`.
+</details>
+
+<details>
+<summary><b>Why does each of us serve the pages ourselves?</b></summary>
+
+The pages could be loaded from your machine as well, at `http://YOUR_IP:8000`,
+and it would work for the player page. But browsers allow a page to use the
+camera only on a secure origin, and a plain HTTP page on a LAN address is not
+one. Loading the sender page from the co-attendee's own `localhost` avoids the
+problem. What matters is only where the _Boombox URL_ points to.
+</details>
+
+<details>
+<summary><b>The page says "Connecting..." and nothing happens</b></summary>
+
+Check, in this order:
+- the pipeline is running and its signaling URLs use `0.0.0.0`,
+- both laptops are on the same Wi-Fi network and the IP address is right,
+- your firewall lets Elixir accept incoming connections. macOS may show a
+  prompt asking about it the first time, click _Allow_.
+
+Some conference networks isolate the clients from each other. If nothing helps,
+one of you can share a hotspot from a phone and both connect to it.
+</details>
+
+<details>
+<summary><b>Signaling works but there is no video</b></summary>
+
+Signaling is only the first step. The media itself flows over a separate
+connection, and the peers find each other by exchanging ICE candidates, that is
+the addresses they can be reached at. The pipeline advertises all the addresses
+of your machine, including the Wi-Fi one, so on the same network this should
+work out of the box. If one of you is connected to a VPN, disconnect it, as VPN
+addresses may get picked first and they are unreachable for the other side.
 </details>
