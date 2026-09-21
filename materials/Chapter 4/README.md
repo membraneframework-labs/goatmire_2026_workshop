@@ -30,12 +30,6 @@ A few things happen before any media flows:
 - **Connection.** Once the peers know each other's addresses, they set up an
   encrypted connection and start sending media over it in small packets (RTP).
 
-WebRTC also decides which codecs may be used. Audio is sent as **Opus** and
-video as **VP8** or **H264**. This means the raw video and audio produced by
-your pipeline have to be encoded before they can be sent, and the media coming
-from the browser has to be decoded before you can work with it. Sounds like a
-lot of work, but you already know an element that does exactly this.
-
 ### Live streams
 
 In Chapter 3 you learned that a file can be read much faster than it should be
