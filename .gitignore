@@ -22,3 +22,6 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 goatmire_2026_workshop-*.tar
 
+
+# Output of the pipeline built during the workshop.
+result.mp4
