@@ -89,6 +89,11 @@ of its pads (both input and output ones, see
 and [`def_output_pad`](https://membrane-core.hexdocs.pm/Membrane.Element.WithOutputPads.html#def_output_pad/2)).
 It can be set to one of three values (see [`Membrane.Pad.flow_control/0`](https://membrane-core.hexdocs.pm/Membrane.Pad.html#t:flow_control/0)):
 
+* `:auto` - the default value of the `flow_control` option. Automatically adjusts the flow control
+  to the needs of the pipeline. The framework calculates the demand under the hood, based on the
+  demand of the neighbouring elements and the element's own pace of processing, so the element only
+  implements `handle_buffer` and the whole chain of such elements adapts to the pace of the slowest
+  one.
 * `:push` - no backpressure at all. An element with a `:push` output pad sends buffers whenever
   it wants, and an element with a `:push` input pad has to process whatever comes, as fast as it
   comes. Use it when the pace is dictated by the outside world anyway, e.g. for a source receiving
@@ -98,11 +103,11 @@ It can be set to one of three values (see [`Membrane.Pad.flow_control/0`](https:
   the demand on its `:manual` output pad and has to satisfy it by hand. The developer gets full
   control over which pad to read from, how much and when, at the price of having to implement it
   by hand.
-* `:auto` - the default value of the `flow_control` option. Automatically adjusts the flow control
-  to the needs of the pipeline. The framework calculates the demand under the hood, based on the
-  demand of the neighbouring elements and the element's own pace of processing, so the element only
-  implements `handle_buffer` and the whole chain of such elements adapts to the pace of the slowest
-  one.
+
+From the developer's point of view, `:auto` and `:push` are almost the same: take an element
+written for one of them, change the `flow_control` field and it will (more or less) still work,
+without touching anything else in the code. `:manual` is different, as the element has to
+implement `handle_demand` and return the `:demand` action itself.
 
 Most of the elements are fine with `:auto` flow control, but sometimes you need custom logic that
 can only be expressed with manual demands. Here's how the most common case - a filter with both
