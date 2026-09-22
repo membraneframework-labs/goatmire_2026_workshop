@@ -13,7 +13,8 @@ defmodule Goatmire2026Workshop.MixProject do
 
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger],
+      mod: {Goatmire2026Workshop.Application, []}
     ]
   end
 
@@ -21,10 +22,18 @@ defmodule Goatmire2026Workshop.MixProject do
     [
       # Chapter 1 deps
       {:membrane_core, "~> 1.3"},
-      {:membrane_file_plugin, "~> 0.17.3"},
+      {:membrane_file_plugin, "~> 0.17.4"},
       {:membrane_ivf_plugin, "~> 0.9.0"},
-      {:membrane_transcoder_plugin, "~> 0.4.0"},
-      {:membrane_mp4_plugin, "~> 0.36.9"}
+      {:membrane_transcoder_plugin, "~> 0.5.0"},
+      {:membrane_mp4_plugin, "~> 0.36.9"},
+      # Chapter 3 deps
+      {:membrane_realtimer_plugin, "~> 0.11.1"},
+      {:membrane_sdl_plugin, "~> 0.18.8"},
+      {:membrane_portaudio_plugin, "~> 0.19.6"},
+      {:membrane_raw_audio_parser_plugin, "~> 0.5.0"},
+      # Chapter 4 deps
+      {:boombox, github: "membraneframework/boombox"},
+      {:bandit, "~> 1.12"}
     ]
   end
 end
