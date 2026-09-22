@@ -50,7 +50,7 @@ that the generated timestamps may be inaccurate and get out of sync with other m
 Sometimes timestamps need to dictate the speed of processing, and sometimes they don't.
 For example, when you need to transcode a video provided as an .mp4 file and save it into another
 .mp4 file, you probably would like to do it as fast as possible. This class of scenarios is referred
-to as "offline processing".
+to as _offline processing_.
 On the contrary, when the media is meant to be consumed as it flows - displayed to the user or sent to
 another peer - each chunk has to be delivered at the time its timestamp says. This is called
 "online processing".
