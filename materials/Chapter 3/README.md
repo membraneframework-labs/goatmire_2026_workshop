@@ -21,7 +21,7 @@ Each [`Membrane.Buffer`](https://membrane-core.hexdocs.pm/Membrane.Buffer.html) 
 
 Both are expressed with [`Membrane.Time`](https://membrane-core.hexdocs.pm/Membrane.Time.html).
 
-These two might differ in some scenarios, especially when so called _B-frames_ are used in video codecs.
+DTS values are always strictly increasing. PTS values may be identical to DTS, but that is not guaranteed, particularly when a video codec uses so-called _B-frames_.
 A B-frame is encoded relative to frames that are presented both before and after it. As a result,
 some frames have to be decoded earlier than they are presented, so that the frames which depend on
 them can be decoded in time.
