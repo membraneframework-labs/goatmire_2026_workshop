@@ -26,7 +26,7 @@ A few things happen before any media flows:
 - **Signaling.** The peers have to agree on what they will send, in which
   codecs, and how to reach each other. They do it by exchanging messages: an
   _SDP offer_, an _SDP answer_ and _ICE candidates_ (the network addresses each
-  peer can be reached at). WebRTC does not say _how_ these messages should be
+  peer can be reached at). WebRTC standard does not specify _how_ these messages should be
   delivered - that's up to the application. In this chapter a plain WebSocket
   connection between the browser and the pipeline is used for that.
 - **Connection.** Once the peers know each other's addresses, they set up an
