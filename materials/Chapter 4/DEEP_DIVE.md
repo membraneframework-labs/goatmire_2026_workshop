@@ -19,7 +19,7 @@ WebRTC (Web Real-Time Communication) is a set of protocols that lets two peers,
 usually browsers, send audio and video to each other with very low delay. It's
 what powers video calls in the browser. A Membrane pipeline can be one of the
 peers too - it can receive a stream from a browser, process it and send a stream
-back.
+back to that browser or forward it to another peer.
 
 A few things happen before any media flows:
 
