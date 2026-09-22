@@ -34,8 +34,7 @@ with [`Membrane.File.Source`](https://membrane-file-plugin.hexdocs.pm/Membrane.F
 obviously won't have any of them available - they will appear only after demuxing).
 
 Missing timestamps can be restored to some extent, provided that the stream has a constant
-sampling rate. Then every chunk carries its own duration - the number of samples divided by the
-sampling rate - and the timestamp of a chunk is just the sum of the durations of all the chunks
+sampling rate. Then every chunk carries its own duration and the timestamp of a chunk is just the sum of the durations of all the chunks
 before it. What can't be restored is the offset of the whole stream, i.e. at which point in time it
 starts - if that information is simply not there, the restored timestamps usually start from zero.
 For audio the sampling rate is constant by nature, and that's what elements like
