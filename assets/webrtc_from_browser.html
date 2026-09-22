@@ -1,7 +1,5 @@
-<!-- Copied from the Boombox repository:
-     https://github.com/membraneframework/boombox/blob/master/examples/data/webrtc_from_browser.html
-     Modified: the camera is requested at exactly 480x270, the resolution of assets/ad_vp8.ivf,
-     so the pipeline can switch between the two streams without rescaling. -->
+<!-- Copied unchanged from the Boombox repository:
+     https://github.com/membraneframework/boombox/blob/master/examples/data/webrtc_from_browser.html -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -26,7 +24,7 @@
 
   <script>
     const pcConfig = { 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' },] };
-    const mediaConstraints = { video: { width: { exact: 480 }, height: { exact: 270 } }, audio: true };
+    const mediaConstraints = { video: { width: 640, height: 480 }, audio: true };
     const button = document.getElementById("button");
     const connStatus = document.getElementById("status");
     const preview = document.getElementById("preview");
