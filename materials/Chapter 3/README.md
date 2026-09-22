@@ -53,7 +53,7 @@ For example, when you need to transcode a video provided as an .mp4 file and sav
 to as _offline processing_.
 On the contrary, when the media is meant to be consumed as it flows - displayed to the user or sent to
 another peer - each chunk has to be delivered at the time its timestamp says. This is called
-"online processing".
+_online processing_.
 Sometimes the pacing comes for free, because the source itself is "online" - a camera producing a
 single frame every 1/30 of a second delivers its stream at exactly the speed at which it should be
 displayed.
