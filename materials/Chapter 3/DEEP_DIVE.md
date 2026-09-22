@@ -15,11 +15,11 @@ explanation of the tasks - a more concise version can be found in
 
 Handling time is the key to handling multimedia! In most cases it's crucial to process and deliver
 data at the desired time.
-Each [`Membrane.Buffer`](https://membrane-core.hexdocs.pm/Membrane.Buffer.html) can be assigned:
+Each `Membrane.Buffer` can be assigned:
 * **PTS** - _presentation timestamp_, stored in the `pts` field - it tells you when to _present_ a given chunk of multimedia,
 * **DTS** - _decoding timestamp_, stored in the `dts` field - it tells you when to _decode_ a given chunk of multimedia.
 
-Both are expressed with [`Membrane.Time`](https://membrane-core.hexdocs.pm/Membrane.Time.html).
+Both are expressed with `Membrane.Time`.
 
 DTS values are always strictly increasing. PTS values may be identical to DTS, but that is not guaranteed, particularly when a video codec uses so-called _B-frames_.
 A B-frame is encoded relative to frames that are presented both before and after it. As a result,
@@ -30,7 +30,7 @@ Timestamps of media chunks (like video frames or chunks of audio samples) are us
 multimedia containers (like MP4) - e.g. a plain H264 stream does not contain any timestamps.
 Sometimes both PTS and DTS are present, sometimes only one of them, and sometimes none of them -
 in most cases it depends on the phase of multimedia processing (e.g. right after reading an .mp4 file
-with [`Membrane.File.Source`](https://membrane-file-plugin.hexdocs.pm/Membrane.File.Source.html) we
+with `Membrane.File.Source` we
 obviously won't have any of them available - they will appear only after demuxing).
 
 Missing timestamps can be restored to some extent, provided that the stream has a constant
@@ -39,7 +39,7 @@ before it. What can't be restored is the offset of the whole stream, i.e. at whi
 starts. If that information is simply not there, any value can be chosen as the starting point and
 elements restoring timestamps typically start from zero.
 For audio the sampling rate is constant by nature, and that's what elements like
-[`Membrane.RawAudioParser`](https://membrane-raw-audio-parser-plugin.hexdocs.pm/Membrane.RawAudioParser.html)
+`Membrane.RawAudioParser`
 rely on. Raw audio is just a sequence of samples, each of a known size, so the parser can count the
 samples in every buffer it passes through and, knowing the sampling rate, turn that count into a
 duration. With its `overwrite_pts?` option set to `true`, it sets the `pts` of each buffer to the
@@ -47,7 +47,7 @@ total duration of the audio that has passed before it.
 For video the same trick works only if the frame rate is constant - with a variable
 frame rate there's no way to tell how long a frame should be displayed without a timestamp.
 That's why, on the contrary, the corresponding option of
-[`Membrane.H264.Parser`](https://membrane-h264-plugin.hexdocs.pm/Membrane.H264.Parser.html) is called
+`Membrane.H264.Parser` is called
 `generate_best_effort_timestamps` - you have to provide the frame rate yourself, and the docs warn
 that the generated timestamps may be inaccurate and get out of sync with other media.
 
@@ -65,7 +65,7 @@ But when the source is a file, it can be read much faster than the media should 
 without any pacing the viewer would see all the frames almost at once, which wouldn't make any sense.
 In such a case the stream has to be artificially slowed down to "real time" based on its timestamps.
 That's what so called "realtimers" do, and Membrane provides one as the
-[`Membrane.Realtimer`](https://membrane-realtimer-plugin.hexdocs.pm/Membrane.Realtimer.html)
+`Membrane.Realtimer`
 element from the `membrane_realtimer_plugin` package. It's a filter you can plug into your
 pipeline. It holds every buffer it receives until the buffer's timestamp comes and only then passes
 it on, so whatever the pace of the stream entering it, the stream leaving it flows in real time.
@@ -84,10 +84,8 @@ consumer tell the producer how much it can take is called _backpressure_, and Me
 it with _demands_.
 
 Membrane allows you to configure the flow control of your element with the `flow_control` option
-of its pads (both input and output ones, see
-[`def_input_pad`](https://membrane-core.hexdocs.pm/Membrane.Element.WithInputPads.html#def_input_pad/2)
-and [`def_output_pad`](https://membrane-core.hexdocs.pm/Membrane.Element.WithOutputPads.html#def_output_pad/2)).
-It can be set to one of three values (see [`Membrane.Pad.flow_control/0`](https://membrane-core.hexdocs.pm/Membrane.Pad.html#t:flow_control/0)):
+of its pads (both input and output ones, i.e. in `def_input_pad` and `def_output_pad`).
+It can be set to one of three values:
 
 * `:auto` - the default value of the `flow_control` option. Automatically adjusts the flow control
   to the needs of the pipeline. The framework calculates the demand under the hood, based on the
@@ -138,12 +136,12 @@ the filter sends the buffer on with `buffer: {:output, buffer}`. Once the downst
 more, `handle_demand/5` is called again and the cycle repeats.
 
 For output pads in this mode, you implement
-[`handle_demand/5`](https://membrane-core.hexdocs.pm/Membrane.Element.WithOutputPads.html#c:handle_demand/5) -
+`handle_demand/5` -
 it's called when the element linked to your output asks for data, and it's your job to satisfy
 that demand. In a source you would read the data from some "side channel" (like a file) and send
 it. In a filter you would typically propagate the demand upstream, as above.
 
-For input pads, you return the [`:demand` action](https://membrane-core.hexdocs.pm/Membrane.Element.Action.html#t:demand/0)
+For input pads, you return the `:demand` action
 that asks the element linked to your input for the given number of buffers or bytes (depending on the
 pad's `demand_unit`). The `:demand` action overwrites the current demand, it does not add to it.
 For example, if you demand 5 buffers, receive 3 of them and then demand 5 again:
@@ -167,13 +165,13 @@ stream ends earlier. Note how precise this is - you are **guaranteed** not to re
 buffers/bytes than requested.
 
 > Since `membrane_core` 1.3 there is also a way to express the demand in timestamp units (i.e. ask
-> for 30 seconds of a stream). This mechanism behaves differently than demanding in bytes or buffers -
-> if you want to know more, refer to the [`:demand` action docs](https://membrane-core.hexdocs.pm/Membrane.Element.Action.html#t:demand/0).
+> for 30 seconds of a stream). This mechanism behaves differently than demanding in bytes or buffers,
+> but it's out of scope of this workshop.
 
 You are expected to satisfy the whole demand on your output, so you need to take care of the
 scenario in which the buffers you demanded and received aren't enough to do so - for example because you
 dropped some of them. Membrane provides a helper for that, the
-[`:redemand` action](https://membrane-core.hexdocs.pm/Membrane.Element.Action.html#t:redemand/0).
+`:redemand` action.
 Returning it for an output pad with manual flow control calls `handle_demand/5` for this pad once
 again (as long as the demand hasn't been satisfied yet), with the updated demand value, so you get
 another chance to ask for more data on the input - and your demand logic stays in a single place.
@@ -201,9 +199,6 @@ again and the filter asks for more. In this particular case you could obviously 
 and demand `2 * size` right away, since you know upfront that half of the buffers will be dropped.
 But often you don't know in advance how many input buffers it will take to produce one output
 buffer and then it's more natural to demand what you've been asked for and let `:redemand` take care of the rest.
-
-If you want to dig deeper, the [flow control guide](https://membrane-core.hexdocs.pm/06_flow_control.html)
-in the Membrane docs covers this topic in full.
 
 ## The tasks
 
@@ -233,19 +228,19 @@ The plugins you'll need for all three tasks are already listed in `mix.exs`:
 ```
 
 - `:membrane_realtimer_plugin` - Plugin that provides a single component:
-  * [`Membrane.Realtimer`](https://membrane-realtimer-plugin.hexdocs.pm/Membrane.Realtimer.html) - A filter that holds every buffer until its timestamp
+  * `Membrane.Realtimer` - A filter that holds every buffer until its timestamp
     is reached and only then passes it on. In other words, it makes the stream
     flow in real time, instead of as fast as the upstream can produce it. The
     timestamp of the first buffer is treated as the starting point, so a stream
     whose timestamps don't start from zero won't cause any initial delay.
 - `:membrane_sdl_plugin` - Plugin for displaying video with the SDL library:
-  * [`Membrane.SDL.Player`](https://membrane-sdl-plugin.hexdocs.pm/Membrane.SDL.Player.html) - A sink that opens a window and draws the raw video
+  * `Membrane.SDL.Player` - A sink that opens a window and draws the raw video
     frames it receives. It accepts only raw video in the `I420` pixel format.
 - `:membrane_portaudio_plugin` - Plugin for playing and capturing audio with the PortAudio library:
-  * [`Membrane.PortAudio.Sink`](https://membrane-portaudio-plugin.hexdocs.pm/Membrane.PortAudio.Sink.html) - A sink that plays received raw audio through the
+  * `Membrane.PortAudio.Sink` - A sink that plays received raw audio through the
     default audio device.
 - `:membrane_raw_audio_parser_plugin` - Plugin for dealing with raw audio streams:
-  * [`Membrane.RawAudioParser`](https://membrane-raw-audio-parser-plugin.hexdocs.pm/Membrane.RawAudioParser.html) - A filter that, among other things, can compute
+  * `Membrane.RawAudioParser` - A filter that, among other things, can compute
     timestamps of raw audio buffers based on their size and the audio format,
     which is exactly what you need if the stream doesn't have timestamps yet.
 
@@ -299,7 +294,7 @@ same format as `assets/bbb_vp8.ivf` - VP8 in an IVF container, 480x270, 25 frame
 
 The element, let's call it `StreamSwitcher`, should:
 - have two input pads - `:main` and `:ad` - and one output pad,
-- have an option with the timestamp of the `:main` stream at which the ad should be inserted (see [`Membrane.Time`](https://membrane-core.hexdocs.pm/Membrane.Time.html)),
+- have an option with the timestamp of the `:main` stream at which the ad should be inserted (see `Membrane.Time`),
 - forward buffers from `:main` up to and including the first one whose timestamp is at or past the switch time,
 - then forward all buffers from `:ad` until it ends,
 - then go back to forwarding `:main` from where it was paused, so that no frames are lost,
