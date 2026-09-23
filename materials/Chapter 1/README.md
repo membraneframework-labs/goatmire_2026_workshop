@@ -1,6 +1,6 @@
 # Chapter 1 - Codecs, containers and pipelines
 
-[DEEP_DIVE.md](./DEEP_DIVE.md) goes over everything in detail - this file will be more concise 
+[DEEP_DIVE.md](./DEEP_DIVE.md) goes over everything in detail - this file will be more concise
 and won't explain everything step by step. If you feel like you understand
 everything needed for this chapter then this version should suffice, however if
 you are ever unsure about something, it's probably explained in the deep dive.
@@ -9,30 +9,30 @@ you are ever unsure about something, it's probably explained in the deep dive.
 
 Your task is to create a pipeline that will read audio from an MP3 file,
 VP8 video from an IVF file, transcode them into AAC and H264 respectively, and
-mux them into a single MP4 container file.
+mux them into a single MP4 container file, `result.mp4`.
 
 ### The process
 
 The process your pipeline will implement looks like this:
 - Get audio stream:
-  1. Read a MP3 audio stream from `assets/input_audio.mp3`,
+  1. Read a MP3 audio stream from `assets/bbb.mp3`,
   2. Transcode the audio stream from MP3 to AAC,
-- Get video stream: 
-  1. Read an IVF container from `assets/input_video.ivf`,
+- Get video stream:
+  1. Read an IVF container from `assets/bbb_vp8.ivf`,
   2. Extract a VP8 video stream from the container,
   3. Transcode the video stream from VP8 to H264,
 - Mux the AAC audio stream and H264 video stream into an MP4 container.
-- Save the MP4 container to a file.
+- Save the MP4 container to `result.mp4`.
 
 ### Building blocks
 
 
 | Component | Description |
 |-----------|-------------|
-| `Membrane.File.Source` | Reads chunks of raw bytes from a given file, puts them into buffers and sends them along | 
-| `Membrane.File.Sink` | Writes received chunks of data to a file. | 
+| `Membrane.File.Source` | Reads chunks of raw bytes from a given file, puts them into buffers and sends them along |
+| `Membrane.File.Sink` | Writes received chunks of data to a file. |
 | `Membrane.IVF.Deserializer` | Receives a stream with an IVF container and outputs the stream extracted from the container. |
-| `Membrane.Transcoder` | A powerful component capable of transcoding the input audio or video stream into a desired format specified with a simple declarative API. | 
+| `Membrane.Transcoder` | A powerful component capable of transcoding the input audio or video stream into a desired format specified with a simple declarative API. |
 | `Membrane.MP4.Muxer.ISOM` | Takes in a single or multiple input streams and muxes them into an MP4 container, ready to be saved to a file. |
 
 
@@ -44,14 +44,14 @@ action from one of Pipeline's callbacks. This action needs to contain a definiti
 what components should be spawned and how they should be linked, which is
 expressed by a handful of functions:
 
-To create a 'start' of a pipeline the first component has to be a Source and
-[`child/2`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#child/2) 
-function is used. To link the source with a filter, pass the returned 
+A pipeline definition starts with a Source, which is created with the
+[`child/2`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#child/2)
+function. To link the source with a filter, pass the returned
 [`builder`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#t:builder/0)
 to a [`child/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#child/3) call.
 Finally the pipeline needs to be finished off with a sink.
 
-If a component has multiple inputs or outputs and you want to link something to it after you've already defined it, 
+If a component has multiple inputs or outputs and you want to link something to it after you've already defined it,
 you can refer to it by it's name with
 [`get_child/2`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#get_child/2)
 (or [`get_child/1`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#get_child/1) if it's a source).
@@ -69,7 +69,7 @@ created. To do that, pass a component's struct instead of a module in `child/2` 
 An example pipeline can be defined like this:
 
 ```elixir
-spec = 
+spec =
   [
     child(:my_source, %MySource{some_element_option: :some_value})
     |> via_out(:some_output, options: [some_pad_option: :some_value])
@@ -83,7 +83,7 @@ spec =
 The resulting structure will look like this:
 
 ```mermaid
-graph LR 
+graph LR
   A[:my_source] --> B[:my_filter]
   B --> C[:my_sink]
   D[:my_other_source] --> B
@@ -109,12 +109,12 @@ mix membrane.gen.pipeline WorkshopPipeline
 ```
 
 In `handle_init/2` you can define the pipeline that will do what you want and
-bring it to life with 
+bring it to life with
 [`:spec`](https://membrane-core.hexdocs.pm/Membrane.Pipeline.Action.html#t:spec/0) action.
 
-Last thing to do is to handle termination of the pipeline with 
+Last thing to do is to implement termination of the pipeline within
 [`handle_element_end_of_stream/4`](https://membrane-core.hexdocs.pm/Membrane.Pipeline.html#c:handle_element_end_of_stream/4)
-callback and 
+callback using
 [`:terminate`](https://membrane-core.hexdocs.pm/Membrane.Pipeline.Action.html#t:terminate/0)
 action:
 
@@ -130,4 +130,6 @@ def handle_element_end_of_stream(_element, _pad, _ctx, state) do
 end
 ```
 
-If everything's set, the pipeline can be run with `mix run run_pipeline.exs`.
+If everything's set, run the pipeline with `mix run run_pipeline.exs`. This
+script, already present in the project, starts the pipeline and waits for it to
+terminate.

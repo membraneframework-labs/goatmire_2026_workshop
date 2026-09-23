@@ -6,12 +6,13 @@ BONUS tasks are for you.
 ## BONUS Task
 
 It's really simple - reverse the pipeline you implemented. Transform an MP4 file
-with H264 and AAC tracks into an IVF file with VP9 and an MP3 file. You'll need
+with H264 and AAC tracks (you can use `assets/bbb_h264_aac.mp4` or `result.mp4` from
+the main task) into an IVF file with VP9 and an MP3 file. You'll need
 a few more components that weren't mentioned:
 * `Membrane.MP4.Demuxer.ISOM` - Extracts different tracks from
-  an MP4 container - essentially the reverse of `Membrane.MP4.Muxer.ISOM`. 
-* `Membrane.IVF.Serializer` - Puts a video track into an IVF container - 
-  essentially the reverse of `Membrane.IVF.Deserializer`. 
+  an MP4 container - essentially the reverse of `Membrane.MP4.Muxer.ISOM`.
+* `Membrane.IVF.Serializer` - Puts a video track into an IVF container -
+  essentially the reverse of `Membrane.IVF.Deserializer`.
 
 ### Hints
 <details>
@@ -39,11 +40,11 @@ spec = [
 ## BONUS B O N U S Task
 
 Woah, you're good. Hopefully this one will stop you, because we don't have any
-more (for this chapter at least). 
+more (for this chapter at least).
 
 Your BONUS B O N U S task is to extend the pipeline from BONUS task and add support
 for MP4's with any number of H264 and AAC tracks - each one should end up in
-a separate IVF or MP3 file. 
+a separate IVF or MP3 file.
 
 ### Hints
 <details>
@@ -54,12 +55,12 @@ bit cluttered, search for records looking something like this:
 `Stream #0:0[0x1](und): Audio: aac` - this one indicates an AAC audio
 track.
 
-To check it programatically, a 
+To check it programatically, a
 [`:new_tracks`](https://membrane-mp4-plugin.hexdocs.pm/Membrane.MP4.Demuxer.ISOM.html#t:new_tracks_t/0)
 notification emitted by the Demuxer
-will be your ally - see the 
-[Demuxer's documentation](https://membrane-mp4-plugin.hexdocs.pm/Membrane.MP4.Demuxer.ISOM.html) 
-for details. In it you'll find the necessary information to link output pads 
+will be your ally - see the
+[Demuxer's documentation](https://membrane-mp4-plugin.hexdocs.pm/Membrane.MP4.Demuxer.ISOM.html)
+for details. In it you'll find the necessary information to link output pads
 corresponding to the tracks from the MP4. These pads are _dynamic_, you can read
 more about this concept [here](https://membrane-core.hexdocs.pm/pads.html#dynamic-pads).
 </details>
