@@ -5,7 +5,7 @@ BONUS tasks are for you.
 
 ## BONUS Task
 
-Modify your element so that it inverts only the bottom half of the frames.
+Modify your element so that it inverts only the bottom half of every frame, leaving the top half untouched.
 
 To do this you'll need access to the resolution of the stream, which is
 available in `handle_buffer/4`. The third argument of this callback is the
@@ -17,4 +17,4 @@ Without getting into details, the width of the frame can be accessed at
 
 ## BONUS B O N U S Task
 
-Modify your element so that it inverts only the left half of the frames.
+Modify your element so that it inverts only the left half of every frame, leaving the right half untouched.

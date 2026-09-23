@@ -47,9 +47,11 @@ Pixels on a frame:
  -------
 ```
 
-Let's assume a pixel takes up `n` bytes in memory. A pixel at coordinates `(x, y)`
-will have an address of `(y * width + x) * n` - first you move over `y` rows which take up `width`
-pixels, and then you access the `x`th pixel in the `y`th row.
+Let's assume a pixel takes up `n` bytes in memory. A pixel at coordinates `(x, y)`,
+where `x` is the horizontal position and `y` is the vertical position, both counted
+from the top-left pixel starting at 0, will have an address of `(y * width + x) * n` -
+first you move over `y` rows which take up `width` pixels, and then you access the
+`x`th pixel in the `y`th row.
 
 #### Pixel format
 
@@ -59,16 +61,15 @@ there's typically not that much to optimize - value of a pixel is it's brightnes
 where 0 means black and max value means white.
 
 In color formats, more complex approaches are used - expressing a color as a
-single value is not really practical. The most popular practice in video
-is to use [chroma subsampling](https://en.wikipedia.org/wiki/Chroma_subsampling), 
-but this guide is already getting long, so we'll not get into that here. 
+single value is not really practical. Video usually uses formats optimized for
+compression, but this guide is already getting long, so we'll not get into that here.
 
 For direct image manipulation, [RGB](https://en.wikipedia.org/wiki/RGB_color_model)
 is more handy. You probably already know how RGB colors works, each of the primary 
 colors - red, green and blue - gets assigned a value from 0 to 255. These colors are
-then added together, resulting in the final color. The pixels in a typical
+then mixed together, resulting in the final color. The pixels in a typical
 monitor are made out of three parts, each one emitting a primary color with a
-given intensity - that's one of the ways how the RGB addition can occur.
+given intensity - that's one of the ways how the RGB mixing can occur.
 
 Let's talk about how the RGB frames are represented in memory. Each pixel gets three
 bytes, one for each of the primary colors. The pixels are organized like shown in the
@@ -92,24 +93,18 @@ Pixels on a frame:
 Great, you now know exactly how RGB images are stored in memory. Now, how do you
 invert colors of an image, what does this even mean? Inverting a color can be also
 called getting its [complementary color](https://en.wikipedia.org/wiki/Complementary_colors).
-Inverting a while image seem pretty complex at first, but it's really simple to
-achieve this - you just need to take each color from each pixel and convert it 
-to it's complementary value, so that the sum of it and the original one will be equal
-to 255. When adding the resulting (_negative_) image to the original (_positive_) image
-pixel-wise, the result will be a totally white image, which is exactly what
-happens with complementary colors in RGB.
+Inverting a whole image seems pretty complex at first, but it's really simple to
+achieve - each color of each pixel gets replaced with its complementary value,
+so that the sum of the two equals 255. When adding the resulting (_negative_) image to the original (_positive_) image
+pixel-wise, the result will be a totally white image.
 
 ### Creating elements
 
 Elements are the most basic components that can be put into a pipeline. There
-are four different types of elements: 
-- Sources - can only produce streams and have only output pads.
-- Sinks - can only consume streams and have only input pads.
-- Filters - consume, transform and produce streams and have both input and
-  output pads. 
-- Endpoints - similar to filters, but while filters generally only transform a
-  stream, endpoints serve as a sink and a source in a single element - the stream 
-  they produce is a completely different stream than the one they consume. 
+are three main types of elements: 
+- Sources - can only produce streams.
+- Sinks - can only consume streams.
+- Filters - consume streams, transform them and produce the result.
 
 For this task you'll need to implement a Filter - it will take in a normal raw
 video stream, invert its colors, and output it.
@@ -133,7 +128,8 @@ Pipeline template you created in the last task.
 #### Pads
 
 Let's start by defining the _pads_ of the element, which
-can be thought as the parts which link to other components in the pipeline. You
+can be thought of as the inputs and outputs which link to other components in the pipeline.
+Sources have only output pads, sinks only input pads and filters both. You
 can configure pads in many ways, but one of the essential ones is
 by defining their _accepted format_. By doing this you create a contract about
 what the element can handle on its input and output - only components with
