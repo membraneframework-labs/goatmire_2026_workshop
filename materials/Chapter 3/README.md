@@ -7,8 +7,9 @@ you are ever unsure about something, it's probably explained in the deep dive.
 
 ## Tasks
 
-There are three tasks, each built on top of the previous one. Start from the `chapter-2-checkpoint`
-branch, the final solution is on `chapter-3-checkpoint`.
+There are three tasks, each built on top of the previous one. Continue with your
+project from Chapter 2, or fall back on the `chapter-2-checkpoint` branch if it
+doesn't work. The final solution is on `chapter-3-checkpoint`.
 
 ### Task 3.1 - Play the video in real time
 

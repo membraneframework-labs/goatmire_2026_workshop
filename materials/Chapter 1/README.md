@@ -7,6 +7,11 @@ you are ever unsure about something, it's probably explained in the deep dive.
 
 ## Task
 
+Start on the `main` branch, which contains the initial state of the project.
+Our solution is on the `chapter-1-checkpoint` branch, in case you want to
+compare or need to fall back on it in the next chapter. If you finished the main
+task and are looking for a challenge, take a look at [BONUS_TASKS.md](./BONUS_TASKS.md).
+
 Your task is to create a pipeline that will read audio from an MP3 file,
 VP8 video from an IVF file, transcode them into AAC and H264 respectively, and
 mux them into a single MP4 container file, `result.mp4`.

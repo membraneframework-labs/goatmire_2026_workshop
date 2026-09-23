@@ -44,7 +44,8 @@ more (for this chapter at least).
 
 Your BONUS B O N U S task is to extend the pipeline from BONUS task and add support
 for MP4's with any number of H264 and AAC tracks - each one should end up in
-a separate IVF or MP3 file.
+a separate IVF or MP3 file. To test it, use `assets/bbb_ad_multitrack.mp4`, which
+contains two H264 tracks and two AAC tracks.
 
 ### Hints
 <details>

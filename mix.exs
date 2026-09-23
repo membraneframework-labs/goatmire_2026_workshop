@@ -32,7 +32,7 @@ defmodule Goatmire2026Workshop.MixProject do
       {:membrane_portaudio_plugin, "~> 0.19.6"},
       {:membrane_raw_audio_parser_plugin, "~> 0.5.0"},
       # Chapter 4 deps
-      {:boombox, github: "membraneframework/boombox"},
+      {:boombox, "~> 0.3.0"},
       {:bandit, "~> 1.12"}
     ]
   end

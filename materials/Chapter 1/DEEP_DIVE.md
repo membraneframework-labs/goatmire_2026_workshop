@@ -10,6 +10,11 @@ explanation of the task - a more concise version can be found in
 take a look at [BONUS_TASKS.md](./BONUS_TASKS.md)
 
 ## Task
+
+Start on the `main` branch, which contains the initial state of the project.
+Our solution is on the `chapter-1-checkpoint` branch, in case you want to
+compare or need to fall back on it in the next chapter.
+
 Your task is to create a pipeline that will read audio from an MP3 file,
 VP8 video from an IVF file, transcode them into AAC and H264 respectively, and
 mux them into a single MP4 container file, `result.mp4`.
@@ -79,11 +84,8 @@ added the necessary deps to this project:
       # Chapter 1 deps
       {:membrane_core, "~> 1.3"},
       {:membrane_file_plugin, "~> 0.17.4"},
-      {:membrane_ivf_plugin, "~> 0.9.0", override: true},
-      {:membrane_transcoder_plugin,
-       github: "membraneframework/membrane_transcoder_plugin",
-       branch: "rework-audio-pipelines",
-       override: true},
+      {:membrane_ivf_plugin, "~> 0.9.0"},
+      {:membrane_transcoder_plugin, "~> 0.5.0"},
       {:membrane_mp4_plugin, "~> 0.36.9"},
       ...
     ]

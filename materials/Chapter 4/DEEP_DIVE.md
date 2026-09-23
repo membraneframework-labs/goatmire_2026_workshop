@@ -85,7 +85,7 @@ The dependencies you'll need in this chapter are already listed in `mix.exs`:
     [
       ...
       # Chapter 4 deps
-      {:boombox, github: "membraneframework/boombox", branch: "update-transcoder"},
+      {:boombox, "~> 0.3.0"},
       {:bandit, "~> 1.12"}
     ]
 ```

@@ -208,8 +208,9 @@ This chapter consists of three tasks that are built on top of each other:
 2. [Task 3.2](#task-32---insert-an-ad) - write a custom element that inserts an ad into the video stream.
 3. [Task 3.3](#task-33---bring-the-audio-back) - play audio through the speakers and insert an ad into it too.
 
-Start from the `chapter-2-checkpoint` branch, which contains the solution to Chapter 2.
-The final solution can be found on the `chapter-3-checkpoint` branch.
+Continue with your project from Chapter 2. If your solution doesn't work, you can
+fall back on the `chapter-2-checkpoint` branch, which contains ours. The final
+solution can be found on the `chapter-3-checkpoint` branch.
 
 ### Building blocks
 

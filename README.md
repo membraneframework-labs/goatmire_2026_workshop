@@ -17,6 +17,17 @@ The presentations and tasks are located in the `materials/` directory:
 - [Chapter 3 - Timestamps and flow control in Membrane](materials/Chapter%203/README.md)
 - [Chapter 4 - WebRTC and it's usage with Membrane](materials/Chapter%204/README.md)
 
+Each chapter's materials come in two flavours:
+- `README.md` - a concise description of the task and the building blocks
+  needed to complete it. Pick this one if you feel comfortable with the theory
+  from the presentation.
+- `DEEP_DIVE.md` - a thorough version, with the theory explained in detail and
+  the task walked through step by step. If anything in the `README.md` is
+  unclear, it's most likely explained here.
+
+Some chapters also come with a `BONUS_TASKS.md` - extra tasks for those who
+finish the main one early and are up for a challenge.
+
 ## Project development
 
 During the workshop you'll be developing a project based on Membrane from the
@@ -32,9 +43,24 @@ cd membrane_workshop_at_goatmire_2026
 mix deps.get
 ```
 
+### Checkpoint branches
+
 This repo also contains four branches, which can be thought of as checkpoints - each
-one contains the project in a state ready for the next chapter. We recommend
-building the project on your own and consulting the checkpoints when you feel
-the need to, but if something goes wrong there is always the option to fall back
-on a branch ;)
+one contains our solution to a chapter, so the project is in a state ready for
+the next one:
+
+| Branch | Contains |
+|--------|----------|
+| `chapter-1-checkpoint` | Solution to Chapter 1, starting point for Chapter 2 |
+| `chapter-2-checkpoint` | Solution to Chapter 2, starting point for Chapter 3 |
+| `chapter-3-checkpoint` | Solution to Chapter 3, starting point for Chapter 4 |
+| `chapter-4-checkpoint` | Solution to Chapter 4, the finished project |
+
+Using them is optional. We recommend building the project on your own and
+consulting the checkpoints when you feel the need to, but if something goes
+wrong there is always the option to fall back on a branch ;)
+
+```bash
+git checkout chapter-2-checkpoint
+```
 

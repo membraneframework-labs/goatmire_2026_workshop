@@ -13,6 +13,10 @@ take a look at [BONUS_TASKS.md](./BONUS_TASKS.md)
 
 ## The task
 
+Continue with your project from Chapter 1, or fall back on the
+`chapter-1-checkpoint` branch if it doesn't work. The final solution is on
+`chapter-2-checkpoint`.
+
 Your task is to create an element that inverts the colors of an RGB raw video stream
 and plug it in the middle of the pipeline from the previous task.
 
