@@ -295,7 +295,7 @@ same format as `assets/bbb_vp8.ivf` - VP8 in an IVF container, 480x270, 25 frame
 
 The element, let's call it `StreamSwitcher`, should:
 - have two input pads - `:main` and `:ad` - and one output pad,
-- have an option with the timestamp of the `:main` stream at which the ad should be inserted (see `Membrane.Time`),
+- have an option with the timestamp of the `:main` stream at which the ad should be inserted (see `Membrane.Time`). In the pipeline, insert the ad 15 seconds into the main video,
 - forward buffers from `:main` up to and including the first one whose timestamp is at or past the switch time,
 - then forward all buffers from `:ad` until it ends,
 - then go back to forwarding `:main` from where it was paused, so that no frames are lost,

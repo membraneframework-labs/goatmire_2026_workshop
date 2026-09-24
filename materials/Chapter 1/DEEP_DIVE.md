@@ -335,7 +335,7 @@ The desired output format of the Transcoder is specified by its
 `:output_stream_format` option. For the Transcoder that's converting VP8 to H264,
 you need to set `output_stream_format: %Membrane.Transcoder.OutputFormat.H264{stream_structure: :avc1}`,
 and for the other one converting MP3 to AAC you need to set
-`output_stream_format: %Membrane.Transcoder.OutputFormat.AAC{stream_structure: :esds}`. Additionally,
+`output_stream_format: %Membrane.Transcoder.OutputFormat.AAC{config: :esds}`. Additionally,
 the audio transcoder will need information what is the incoming stream format. `Membrane.File.Source`
 can be provided with the information what is the content format of the file it's
 reading through `:content_format` option. In this case it should be set to

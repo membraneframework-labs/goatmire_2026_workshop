@@ -31,7 +31,8 @@ Remember to terminate the pipeline when the player reports end of stream.
 ### Task 3.2 - Insert an ad
 
 Write a `StreamSwitcher` filter with `:main` and `:ad` input pads and one
-`:output` pad. It takes a `switch_time` option (a `Membrane.Time` value) and:
+`:output` pad. It takes a `switch_time` option (a `Membrane.Time` value, use
+`Membrane.Time.seconds(15)` in the pipeline) and:
 
 1. forwards `:main` up to and including the first buffer with `pts >= switch_time`,
 2. forwards `:ad` until it ends,
@@ -62,7 +63,7 @@ Key points:
 Plug it in right after `ColorInverter`. The ad branch reads `assets/ad_vp8.ivf`
 and decodes it the same way as the main video (deserializer and `Transcoder`
 to `RGB` raw video) - it is guaranteed to have the same stream format as the
-main stream. Use `via_in/2` to link the branches to the `:main` and `:ad` pads.
+main stream. Use `via_in/3` to link the branches to the `:main` and `:ad` pads.
 
 ### Task 3.3 - Bring the audio back
 

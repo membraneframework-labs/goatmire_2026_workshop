@@ -28,6 +28,26 @@ Each chapter's materials come in two flavours:
 Some chapters also come with a `BONUS_TASKS.md` - extra tasks for those who
 finish the main one early and are up for a challenge.
 
+## Prerequisites
+
+Before the workshop, make sure you have installed:
+- Elixir 1.20 with Erlang/OTP 27 or 28,
+- FFmpeg (including the `ffplay` command, used to preview the results),
+- SDL2, PortAudio, libvpx, x264 and fdk-aac.
+
+On macOS with Homebrew:
+
+```bash
+brew install elixir ffmpeg sdl2 portaudio libvpx x264 fdk-aac
+```
+
+On Debian or Ubuntu:
+
+```bash
+sudo apt install ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswscale-dev \
+  libswresample-dev libsdl2-dev portaudio19-dev libvpx-dev libx264-dev libfdk-aac-dev
+```
+
 ## Project development
 
 During the workshop you'll be developing a project based on Membrane from the

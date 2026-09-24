@@ -48,8 +48,8 @@ original one will be equal to 255.
 ### Creating elements
 
 Elements are the most basic components that can be put into a Pipeline.
-There are four different types of elements: Sources, Sinks, Filters and
-Endpoints. For this task you'll implement a Filter - elements of this type
+There are three main types of elements: Sources, Sinks and Filters.
+For this task you'll implement a Filter - elements of this type
 both consume and produce streams and can be placed in the middle of a Pipeline.
 
 To create a blank filter, which will become your color inverter, you can call

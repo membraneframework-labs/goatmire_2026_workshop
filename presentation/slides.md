@@ -68,6 +68,7 @@ layout: default
   - `DEEP_DIVE.md`: the theory explained, task walked through step by step
 - **Bonus tasks**: some chapters also have a `BONUS_TASKS.md` for those who finish early
 - **Checkpoint branches**: `chapter-1-checkpoint` … `chapter-4-checkpoint` hold our solutions. Fall back on them if something goes sideways.
+- **Prerequisites**: Elixir 1.20 on OTP 27 or 28, FFmpeg with `ffplay`, SDL2, PortAudio, libvpx, x264, fdk-aac. Install commands are in the repo's `README.md`.
 
 </v-clicks>
 
@@ -897,7 +898,7 @@ layout: default
 - Usually from the **container**. A plain H.264 stream has none, an MP4 has them for every sample. So right after `File.Source` there are none, they appear after demuxing.
 - With a **constant rate** they can be restored: each chunk has a known duration, the timestamp is the sum of the durations before it. The offset of the whole stream is lost, so it starts from zero.
   - Audio has a constant sampling rate by nature: `Membrane.RawAudioParser` with `overwrite_pts?: true` counts samples and sets `pts`.
-  - Video only if the frame rate is constant: `Membrane.H264.Parser` calls its option to restore timestamps `generate_best_effort_timestamps` for a reason.
+  - Video only if the frame rate is constant. That's why the corresponding option of `Membrane.H264.Parser` is called `generate_best_effort_timestamps`: you supply the frame rate, and the result may drift out of sync.
 
 </v-clicks>
 
@@ -1115,7 +1116,7 @@ layout: default
 
 # Task 3.2: insert an ad
 
-Write a `StreamSwitcher` filter with `:main` and `:ad` inputs, one `:output`, and a `switch_time` option. The ad is `assets/ad_vp8.ivf`, same format as the main video.
+Write a `StreamSwitcher` filter with `:main` and `:ad` inputs, one `:output`, and a `switch_time` option, set to 15 seconds in the pipeline. The ad is `assets/ad_vp8.ivf`, same format as the main video.
 
 <div class="flex justify-center">
 
@@ -1448,4 +1449,12 @@ layout: end
 
 membrane.stream · github.com/membraneframework
 
-<img src="/logos/membrane-full-on-dark.svg" alt="Membrane" class="h-10 mt-8 mx-auto" />
+<div class="flex items-center justify-center gap-10 mt-8">
+  <img src="/qr-membrane-core.svg" alt="QR code to membrane_core on GitHub" class="h-36 rounded-lg" />
+  <div class="text-left">
+    <p class="text-white text-lg m-0">Enjoyed the workshop? Give us a star!</p>
+    <a href="https://github.com/membraneframework/membrane_core" class="text-lg" style="color: var(--membrane-blue); border: none">github.com/membraneframework/membrane_core</a>
+  </div>
+</div>
+
+<img src="/logos/membrane-full-on-dark.svg" alt="Membrane" class="h-10 mt-10 mx-auto" />

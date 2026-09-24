@@ -188,7 +188,8 @@
   font-weight: 600;
 }
 
-.slidev-layout.section h1::after {
+.slidev-layout.section h1::after,
+.slidev-layout.end h1::after {
   margin-left: auto;
   margin-right: auto;
 }
