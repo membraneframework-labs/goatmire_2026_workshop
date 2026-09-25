@@ -68,7 +68,7 @@ layout: default
   - `DEEP_DIVE.md`: the theory explained, task walked through step by step
 - **Bonus tasks**: some chapters also have a `BONUS_TASKS.md` for those who finish early
 - **Checkpoint branches**: `chapter-1-checkpoint` … `chapter-4-checkpoint` hold our solutions. Fall back on them if something goes sideways.
-- **Prerequisites**: Elixir 1.17 on OTP 27 or 28, FFmpeg with `ffplay`. Install commands are in the repo's `README.md`.
+- **Prerequisites**: Elixir 1.17 or newer on OTP 27 or 28, FFmpeg with `ffplay`. Install commands are in the repo's `README.md`.
 
 </v-clicks>
 
@@ -293,11 +293,55 @@ layout: default
 
 - A multimedia framework written in **Elixir**.
 - A **pipeline** is a graph of **elements** that media flows through.
+
+</v-clicks>
+
+<v-click>
+
+<div class="flex justify-center">
+  <svg viewBox="0 0 640 110" class="h-28" style="font-family: DM Sans, sans-serif; font-size: 13px" fill="#001A72">
+    <defs>
+      <marker id="pid-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#001A72" />
+      </marker>
+    </defs>
+    <g stroke="#001A72" stroke-width="2.5" marker-end="url(#pid-arrow)">
+      <line x1="102" y1="55" x2="268" y2="55" />
+      <line x1="372" y1="55" x2="538" y2="55" />
+    </g>
+    <g fill="#87CCE8" stroke="#001A72" stroke-width="1.5">
+      <circle cx="55" cy="55" r="46" />
+      <circle cx="320" cy="55" r="46" />
+      <circle cx="585" cy="55" r="46" />
+    </g>
+    <g text-anchor="middle" dominant-baseline="central">
+      <text x="55" y="55">#PID&lt;0.101.0&gt;</text>
+      <text x="320" y="55">#PID&lt;0.102.0&gt;</text>
+      <text x="585" y="55">#PID&lt;0.103.0&gt;</text>
+    </g>
+  </svg>
+</div>
+
+</v-click>
+
+<v-clicks>
+
 - Every element is an Erlang process.
 - Elements connect through **pads**. Pads must be compatible for media to flow.
 - `membrane_core` is the engine. Elements are shipped in **plugins**, one per domain: files, MP4, H.264, WebRTC…
 
 </v-clicks>
+
+<v-click>
+
+```elixir
+{:membrane_core, "~> 1.3"},
+{:membrane_file_plugin, "~> 0.17.4"},
+{:membrane_transcoder_plugin, "~> 0.5.0"},
+{:membrane_mp4_plugin, "~> 0.36.9"}
+```
+
+</v-click>
 
 ---
 layout: default
@@ -344,22 +388,6 @@ A pipeline cannot have **dangling pads**. Every output must be linked to an inpu
 </div>
 
 </v-click>
-
----
-layout: default
----
-
-# Plugins for this chapter
-
-Already in `mix.exs`.
-
-```elixir
-{:membrane_core, "~> 1.3"},
-{:membrane_file_plugin, "~> 0.17.4"},
-{:membrane_ivf_plugin, "~> 0.9.0"},
-{:membrane_transcoder_plugin, "~> 0.5.0"},
-{:membrane_mp4_plugin, "~> 0.36.9"}
-```
 
 ---
 layout: default
@@ -528,10 +556,7 @@ spec = [
 
 <v-click>
 
-Available options are listed in each element's docs. Two you'll need today:
-
-- `Membrane.File.Source` has `:location` and `:content_format`
-- `Membrane.Transcoder` takes `:output_stream_format` as an option of its `:output` pad, so it goes through `via_out`
+Available options are listed in each element's docs.
 
 </v-click>
 
@@ -614,6 +639,24 @@ graph LR
 layout: default
 ---
 
+# Building blocks
+
+<div class="text-sm">
+
+| Package | Element | Kind | What it does | Options you need |
+|---------|---------|------|--------------|------------------|
+| `membrane_file_plugin` | `Membrane.File.Source` | Source | Reads bytes from a file | `:location`. MP3 has no container to tell what's inside: `content_format: Membrane.MPEGAudio` |
+| `membrane_ivf_plugin` | `Membrane.IVF.Deserializer` | Filter | Extracts the stream from an IVF container | |
+| `membrane_transcoder_plugin` | `Membrane.Transcoder` | Filter | Converts the stream into the declared format | `:output_stream_format` of the `:output` pad, via `via_out`. The muxer needs `%OutputFormat.H264{stream_structure: :avc1}` and `%OutputFormat.AAC{config: :esds}` |
+| `membrane_mp4_plugin` | `Membrane.MP4.Muxer.ISOM` | Filter | Muxes streams into an MP4 container | |
+| `membrane_file_plugin` | `Membrane.File.Sink` | Sink | Writes bytes to a file | `:location` |
+
+</div>
+
+---
+layout: default
+---
+
 # Hands-on
 
 <v-clicks>
@@ -629,21 +672,8 @@ layout: default
 
 Our solution: `chapter-1-checkpoint`.
 
-<div class="text-xs mt-2">
-
-**Building blocks**
-
-| Package | Element | Kind | What it does |
-|---------|---------|------|--------------|
-| `membrane_file_plugin` | `Membrane.File.Source` | Source | Reads chunks of bytes from a file |
-| `membrane_ivf_plugin` | `Membrane.IVF.Deserializer` | Filter | Extracts the video stream from an IVF container |
-| `membrane_transcoder_plugin` | `Membrane.Transcoder` | Filter | Converts the stream into the format you declare |
-| `membrane_mp4_plugin` | `Membrane.MP4.Muxer.ISOM` | Filter | Muxes streams into an MP4 container |
-| `membrane_file_plugin` | `Membrane.File.Sink` | Sink | Writes received chunks to a file |
-
-</div>
-
 </v-click>
+
 ---
 layout: section
 routeAlias: chapter-2

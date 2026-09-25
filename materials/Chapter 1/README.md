@@ -32,21 +32,21 @@ The process your pipeline will implement looks like this:
 ### Building blocks
 
 
-| Component | Description |
-|-----------|-------------|
-| `Membrane.File.Source` | Reads chunks of raw bytes from a given file, puts them into buffers and sends them along |
-| `Membrane.File.Sink` | Writes received chunks of data to a file. |
+| Element | Description |
+|---------|-------------|
+| `Membrane.File.Source` | Reads chunks of raw bytes from a given file, puts them into buffers and sends them along. The file is given with the `:location` option. An MP3 file has no container to tell what's inside, so the MP3 source also needs `content_format: Membrane.MPEGAudio`, otherwise the Transcoder won't recognize the stream. |
+| `Membrane.File.Sink` | Writes received chunks of data to a file given with the `:location` option. |
 | `Membrane.IVF.Deserializer` | Receives a stream with an IVF container and outputs the stream extracted from the container. |
-| `Membrane.Transcoder` | A powerful component capable of transcoding the input audio or video stream into a desired format specified with a simple declarative API. |
+| `Membrane.Transcoder` | A powerful element capable of transcoding the input audio or video stream into a desired format specified with a simple declarative API. The desired format is the `:output_stream_format` option of its `:output` pad, so it's passed with `via_out/3`. The MP4 muxer accepts only H264 in the `:avc1` stream structure and AAC with an `:esds` config, so use `%Membrane.Transcoder.OutputFormat.H264{stream_structure: :avc1}` for the video and `%Membrane.Transcoder.OutputFormat.AAC{config: :esds}` for the audio. |
 | `Membrane.MP4.Muxer.ISOM` | Takes in a single or multiple input streams and muxes them into an MP4 container, ready to be saved to a file. |
 
 
 ### Pipelines
 
-The arrangement of components building a pipeline is determined by returning a
+The arrangement of elements building a pipeline is determined by returning a
 [`:spec`](https://membrane-core.hexdocs.pm/Membrane.Pipeline.Action.html#t:spec/0)
 action from one of Pipeline's callbacks. This action needs to contain a definition of
-what components should be spawned and how they should be linked, which is
+what elements should be spawned and how they should be linked, which is
 expressed by a handful of functions:
 
 A pipeline definition starts with a Source, which is created with the
@@ -56,19 +56,19 @@ function. To link the source with a filter, pass the returned
 to a [`child/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#child/3) call.
 Finally the pipeline needs to be finished off with a sink.
 
-If a component has multiple inputs or outputs and you want to link something to it after you've already defined it,
+If an element has multiple inputs or outputs and you want to link something to it after you've already defined it,
 you can refer to it by it's name with
 [`get_child/2`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#get_child/2)
 (or [`get_child/1`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#get_child/1) if it's a source).
 
-If you need more control over pads - the connectors between components - you can
+If you need more control over pads - the connectors between elements - you can
 use  [`via_in/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_in/3)
 and [`via_out/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_out/3).
 These functions take three arguments - a builder, a pad identifier
 and a keyword list of properties, one of them being `:options`.
 
-Last thing. Almost all components define _options_, which can be passed when they're
-created. To do that, pass a component's struct instead of a module in `child/2` and
+Last thing. Almost all elements define _options_, which can be passed when they're
+created. To do that, pass an element's struct instead of a module in `child/2` and
 `child/3` functions.
 
 An example pipeline can be defined like this:

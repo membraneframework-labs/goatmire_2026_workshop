@@ -5,10 +5,11 @@ BONUS tasks are for you.
 
 ## BONUS Task
 
-It's really simple - reverse the pipeline you implemented. Transform an MP4 file
+It's really simple - reverse the pipeline you implemented, with a twist. Transform an MP4 file
 with H264 and AAC tracks (you can use `assets/bbb_h264_aac.mp4` or `result.mp4` from
-the main task) into an IVF file with VP9 and an MP3 file. You'll need
-a few more components that weren't mentioned:
+the main task) into an IVF file with VP9 (not VP8, to make it a bit more
+interesting) and an MP3 file. You'll need
+a few more elements that weren't mentioned:
 * `Membrane.MP4.Demuxer.ISOM` - Extracts different tracks from
   an MP4 container - essentially the reverse of `Membrane.MP4.Muxer.ISOM`.
 * `Membrane.IVF.Serializer` - Puts a video track into an IVF container -

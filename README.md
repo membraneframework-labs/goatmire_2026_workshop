@@ -15,7 +15,7 @@ The presentations and tasks are located in the `materials/` directory:
 - [Chapter 1 - Codecs, containers and pipelines](materials/Chapter%201/README.md)
 - [Chapter 2 - Raw video processing and custom Membrane Elements](materials/Chapter%202/README.md)
 - [Chapter 3 - Timestamps and flow control in Membrane](materials/Chapter%203/README.md)
-- [Chapter 4 - WebRTC and it's usage with Membrane](materials/Chapter%204/README.md)
+- [Chapter 4 - Real-time streaming with WebRTC](materials/Chapter%204/README.md)
 
 Each chapter's materials come in two flavours:
 - `README.md` - a concise description of the task and the building blocks
@@ -31,7 +31,7 @@ finish the main one early and are up for a challenge.
 ## Prerequisites
 
 Before the workshop, make sure you have installed:
-- Elixir 1.20 with Erlang/OTP 27 or 28,
+- Elixir 1.17 or newer with Erlang/OTP 27 or 28,
 - FFmpeg (including the `ffplay` command, used to preview the results),
 - SDL2, PortAudio, libvpx, x264 and fdk-aac.
 
@@ -51,7 +51,7 @@ sudo apt install ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswscale-
 ## Project development
 
 During the workshop you'll be developing a project based on Membrane from the
-ground up. Each chapter will be building on top of the next.
+ground up. Each chapter builds on top of the previous one.
 
 To get started, clone this repository and stay on the `main` branch - it
 contains the initial state of the project, with all the dependencies and

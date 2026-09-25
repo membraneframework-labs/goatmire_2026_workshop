@@ -26,7 +26,7 @@ Let's go over the process step by step.
 
 You have access to two media files - one with audio, the other with video:
 - `assets/bbb_vp8.ivf` - **IVF** (Indeo Video Format) is a simple container
-  format for storing video. It supports multiple multiple codecs, and the video
+  format for storing video. It supports multiple codecs, and the video
   stored in this one is encoded with **VP8**, an open and royalty-free video coding format.
 - `assets/bbb.mp3` - **MP3** is an audio coding format. It doesn't need to be
 payloaded to a separate container, the encoded stream can just be put into a file directly.
@@ -66,12 +66,12 @@ audio track alongside each other.
 Okay, you know _what_ you need to do. Now let's explore _how_ to do it.
 
 As you probably deduced from the theoretical introduction to Membrane, you'll
-need to construct a pipeline from components that will performs the actions
-described above. Packages that provide Membrane components are called _plugins_,
-and they group components associated with a similair field together. For example,
-`:membrane_mp4_plugin` supplies all the components for muxing and demuxing MP4 containers.
+need to construct a pipeline from elements that will perform the actions
+described above. Packages that provide Membrane elements are called _plugins_,
+and they group elements associated with a similar field together. For example,
+`:membrane_mp4_plugin` supplies all the elements for muxing and demuxing MP4 containers.
 
-Normally you would need to figure out what plugins have the components you need -
+Normally you would need to figure out what plugins have the elements you need -
 a looong list of all our packages can be found in
 [`membrane_core`'s README](https://github.com/membraneframework/membrane_core#all-packages)
 or on `membrane_core`'s [hexdocs](https://membrane-core.hexdocs.pm/00_general.html), in the
@@ -91,25 +91,25 @@ added the necessary deps to this project:
     ]
 ```
 
-`:membrane_core` is the main package of the framework - all other packages depend on it. It implements all functionalities that make the framework work. Rest of the dependencies provide components that will be relevant to us:
+`:membrane_core` is the main package of the framework - all other packages depend on it. It implements all functionalities that make the framework work. Rest of the dependencies provide elements that will be relevant to us:
 
-| Package | Component | Description |
-|---------|-----------|-------------|
+| Package | Element | Description |
+|---------|---------|-------------|
 | `:membrane_file_plugin` | `Membrane.File.Source` | Reads chunks of raw bytes from a given file and sends them along |
 | `:membrane_file_plugin` | `Membrane.File.Sink` | Writes received chunks of data to a file. |
 | `:membrane_ivf_plugin` | `Membrane.IVF.Deserializer` | Receives a stream with an IVF container and outputs the stream extracted from the container. |
-| `:membrane_transcoder_plugin` | `Membrane.Transcoder` | A powerful component capable of transcoding the input audio or video stream into a desired format specified with a simple declarative API. This will spare you from the task of:<br> - manually ensuring the stream is suited for the decoder, <br> - setting up the decoder, <br> - ensuring the raw video is suited for the encoder, <br> - setting up the encoder, <br> - ensuring the encoded output is suitable for MP4 muxing. <br> Instead, you'll only need to specify the output format, and the Transcoder will handle the machinery itself. |
-| `:membrane_mp4_plugin` | `Membrane.MP4.Muxer.ISOM` | A component that takes in a single or multiple input streams and muxes them into an MP4 container, ready to be saved to a file. |
+| `:membrane_transcoder_plugin` | `Membrane.Transcoder` | A powerful element capable of transcoding the input audio or video stream into a desired format specified with a simple declarative API. This will spare you from the task of:<br> - manually ensuring the stream is suited for the decoder, <br> - setting up the decoder, <br> - ensuring the raw video is suited for the encoder, <br> - setting up the encoder, <br> - ensuring the encoded output is suitable for MP4 muxing. <br> Instead, you'll only need to specify the output format, and the Transcoder will handle the machinery itself. |
+| `:membrane_mp4_plugin` | `Membrane.MP4.Muxer.ISOM` | An element that takes in a single or multiple input streams and muxes them into an MP4 container, ready to be saved to a file. |
 
 
-That's all the components need for this task. Time to learn how to build a
+That's all the elements needed for this task. Time to learn how to build a
 pipeline!
 
 ### Pipelines
 
-The purpose of a pipeline is to link components together to perform a
+The purpose of a pipeline is to link elements together to perform a
 given task and orchestrate the process. In this section you'll learn how to define
-the arrangement of components in your pipeline - you need a way to
+the arrangement of elements in your pipeline - you need a way to
 represent a conceptual pipeline in code.
 
 Behavior of a pipeline is mostly controlled by what _actions_ it returns from
@@ -121,10 +121,10 @@ of all actions a pipeline can execute can be found
 [here](https://membrane-core.hexdocs.pm/Membrane.Pipeline.Action.html#t:t/0),
 but for our use case you'll only need the
 [`spec` action](https://membrane-core.hexdocs.pm/Membrane.Pipeline.Action.html#t:spec/0).
-This action is used to spawn the pipeline's children - components - and
+This action is used to spawn the pipeline's children - elements - and
 specify how they will be organized
 once it's executed. A detailed description how to define the arrangement of these
-components can be found in the
+elements can be found in the
 [documentation of `ChildrenSpec` module](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html),
 but you'll need only a handful of available functionalities.
 
@@ -138,10 +138,10 @@ spec =
   ]
 ```
 
-The first argument is the name that this component will have, and the second
-one is the module that implements it. The first component in a pipeline
+The first argument is the name that this element will have, and the second
+one is the module that implements it. The first element in a pipeline
 needs to be a [Source](https://membrane-core.hexdocs.pm/Membrane.Source.html),
-a type of component that can only have outputs.
+a type of element that can only have outputs.
 This function will return a [`builder`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#t:builder/0),
 which can be then passed to a [`child/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#child/3) call:
 
@@ -155,20 +155,20 @@ spec =
 ```
 
 With arguments being analogous. [Filters](https://membrane-core.hexdocs.pm/Membrane.Filter.html)
-are components that have both inputs and outputs, and therefore are usually
-the most common components of pipelines.
+are elements that have both inputs and outputs, and therefore are usually
+the most common elements of pipelines.
 
 When two children of a pipeline are defined like that, with the builder returned
 from defining the first one being passed to the definition of the second one, these
-children will be _linked_. The things through which components connect to each
+children will be _linked_. The things through which elements connect to each
 other are [_pads_](https://membrane-core.hexdocs.pm/pads.html). They can be
-thought of as connectors between components - they need to be compatible, and if
+thought of as connectors between elements - they need to be compatible, and if
 they are, media will flow through them.
 
 But this pipeline won't work - `MyFilter` is a filter, so it also has output
 pads, which can't just be disconnected - a pipeline cannot have any 'dangling'
-pads. We need to add a component which will finish off the pipeline - a
-[`Sink`](https://membrane-core.hexdocs.pm/Membrane.Sink.html). Components of
+pads. We need to add an element which will finish off the pipeline - a
+[`Sink`](https://membrane-core.hexdocs.pm/Membrane.Sink.html). Elements of
 this type have only input pads.
 
 ```elixir
@@ -219,7 +219,7 @@ graph LR
 
 Another thing you'll need for this task is to have more control of
 the pads - the connectors of your pipeline. When
-you link two components, you can specify a name and additional properties of their input or
+you link two elements, you can specify a name and additional properties of their input or
 output pads by using [`via_in/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_in/3)
 and [`via_out/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_out/3)
 respectively. These functions take three arguments - a builder, a pad identifier
@@ -239,15 +239,15 @@ In this pipeline it's explicitly stated that `:my_source`'s output pad called `:
 be connected to `:my_filter`'s default input pad (`:input`). Another thing
 that's happening is that `:some_pad_option` option of pad `:some_output` is set to `:some_value`.
 
-Components define pad options for more precise control of the
+Elements define pad options for more precise control of the
 incoming or outgoing streams -
 [`via_in/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_in/3)
 and [`via_out/3`](https://membrane-core.hexdocs.pm/Membrane.ChildrenSpec.html#via_out/3)
-are the way to actually pass these options to the pads. Components can also have
+are the way to actually pass these options to the pads. Elements can also have
 multiple different pads, and these functions allow to specify which one to link.
 
-Last thing. Almost all components define _options_, which can be passed when they're
-created. To do that, pass a component's struct instead of a module in `child/2` and
+Last thing. Almost all elements define _options_, which can be passed when they're
+created. To do that, pass an element's struct instead of a module in `child/2` and
 `child/3` functions:
 
 ```elixir
@@ -258,7 +258,7 @@ spec =
   ]
 ```
 
-You can see the available options of a component in it's docs.
+You can see the available options of an element in its docs.
 
 Now that you have the structure defined, it's ready to be materialized. In order
 to do so, execute the `:spec` action with the structure you defined. Actions are
@@ -272,12 +272,12 @@ def handle_init(_ctx, _opts) do # this can be any callback
 end
 ```
 
-When this callback returns, the pipeline will spawn and link the components
+When this callback returns, the pipeline will spawn and link the elements
 as specified in `spec`.
 
 ### Building the pipeline
 
-Phew, that was a to take in, but now you have all the necessary tools and
+Phew, that was a lot to take in, but now you have all the necessary tools and
 information to create a pipeline to complete the task!
 
 To create an empty pipeline you can call
@@ -294,18 +294,18 @@ this task can be done inside `handle_init/2` callback, which executes when the
 Pipeline is initialized.
 
 The pipeline will be a bit more complex than the
-shown examples, but not by much. You need to figure out how the components you
+shown examples, but not by much. You need to figure out how the elements you
 need (see [Building blocks](#building-blocks) section) should be connected and
 return a `spec` action reflecting the pipeline you designed.
 
 Last thing to take care of is termination - pipeline doesn't know by itself when
 it's job is done. In our case we want to terminate it when end of stream is
-registered by the last component. This will mean that no more media will flow in
+registered by the last element. This will mean that no more media will flow in
 through the pipeline and the processing is finished. To accomplish this, the
 [`handle_element_end_of_stream/4`](https://membrane-core.hexdocs.pm/Membrane.Pipeline.html#c:handle_element_end_of_stream/4)
 callback will come in handy. It's executed every time a child of the pipeline
 receives end of stream. We want to terminate the pipeline only when the _last_
-component receives end of stream, we can ignore other components. To terminate a
+element receives end of stream, we can ignore other elements. To terminate a
 pipeline, a [`:terminate`](https://membrane-core.hexdocs.pm/Membrane.Pipeline.Action.html#t:terminate/0)
 action should be returned with reason `:normal`:
 
@@ -331,8 +331,8 @@ your choice and see if you like what you found inside.
 <details>
 <summary><b>How to use the Transcoder?</b></summary>
 
-The desired output format of the Transcoder is specified by its
-`:output_stream_format` option. For the Transcoder that's converting VP8 to H264,
+The desired output format of the Transcoder is specified with the
+`:output_stream_format` option of its `:output` pad, passed through `via_out/3`. For the Transcoder that's converting VP8 to H264,
 you need to set `output_stream_format: %Membrane.Transcoder.OutputFormat.H264{stream_structure: :avc1}`,
 and for the other one converting MP3 to AAC you need to set
 `output_stream_format: %Membrane.Transcoder.OutputFormat.AAC{config: :esds}`. Additionally,
