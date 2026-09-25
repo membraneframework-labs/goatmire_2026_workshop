@@ -13,6 +13,11 @@ lineNumbers: false
 drawings:
   persist: false
 transition: fade
+layout: image
+image: /welcome-varberg.png
+---
+
+---
 layout: cover
 ---
 
