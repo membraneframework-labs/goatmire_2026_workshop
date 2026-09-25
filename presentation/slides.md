@@ -517,7 +517,7 @@ layout: default
 
 # Configuring elements
 
-Almost every element has **options**. Pass a struct instead of a module.
+Almost every element has **options**. To set them, you need to pass a struct instead of a module name.
 
 ```elixir
 spec = [
@@ -906,25 +906,9 @@ DTS is always strictly increasing. PTS may equal DTS, but not with **B-frames**:
 
 <v-click>
 
-<div class="grid grid-cols-[auto_1fr] gap-x-6 items-center mt-2">
-<div class="text-sm">Presentation order (PTS)</div>
-<div>
-
-```mermaid {scale: 0.55}
-graph LR
-  I[I] --> B1[B] --> B2[B] --> P[P]
-```
-
-</div>
-<div class="text-sm">Decoding order (DTS)</div>
-<div>
-
-```mermaid {scale: 0.55}
-graph LR
-  I[I] --> P[P] --> B1[B] --> B2[B]
-```
-
-</div>
+<div class="flex flex-col items-center mt-2">
+  <img src="/i_p_and_b_frames.svg" alt="I, P and B frames" class="h-44" />
+  <div class="text-xs opacity-60 mt-1">Source: Wikimedia Commons, I_P_and_B_frames.svg, public domain</div>
 </div>
 
 </v-click>
@@ -1162,7 +1146,7 @@ Write a `StreamSwitcher` filter with `:main` and `:ad` inputs, one `:output`, an
 
 <div class="flex justify-center">
 
-```mermaid {scale: 0.5}
+```mermaid {scale: 0.47}
 graph LR
   A[/bbb_vp8.ivf/]:::stream --> B[File.Source] --> C[IVF.Deserializer] --> D[Transcoder] --> E[ColorInverter] --> S
   A2[/ad_vp8.ivf/]:::stream --> B2[File.Source] --> C2[IVF.Deserializer] --> D2[Transcoder] --> S
@@ -1415,9 +1399,8 @@ Play the output of the pipeline from Chapter 3 in the browser instead of the SDL
 graph LR
   V[/video/]:::stream --> SV[StreamSwitcher] -- "kind: :video" --> B["Boombox.Bin<br/>output: {:webrtc, ws://localhost:8830}"]
   A[/audio/]:::stream --> SA[StreamSwitcher] -- "kind: :audio" --> B
-  B --> W[/WebRTC/]:::stream --> BR([browser]):::external
+  B --> W[/WebRTC/]:::stream --> BR[browser]
   classDef stream fill:#ffffff,stroke:#001A72,stroke-dasharray:4 3
-  classDef external fill:#e9f6fb,stroke:#001A72
 ```
 
 </div>
