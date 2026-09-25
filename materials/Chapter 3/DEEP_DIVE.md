@@ -116,7 +116,7 @@ defmodule PassThrough do
   use Membrane.Filter
 
   def_input_pad :input, accepted_format: _any, flow_control: :manual, demand_unit: :buffers
-  def_output_pad :output, accepted_format: _any, flow_control: :manual
+  def_output_pad :output, accepted_format: _any, flow_control: :manual, demand_unit: :buffers
 
   @impl true
   def handle_demand(:output, size, :buffers, _ctx, state) do

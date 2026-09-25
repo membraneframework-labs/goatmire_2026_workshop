@@ -18,7 +18,7 @@ layout: cover
 
 <img src="/logos/membrane-full-on-dark.svg" alt="Membrane" class="h-14 mb-8" />
 
-# Multimedia with Membrane 101
+<h1 class="whitespace-nowrap">Multimedia with Membrane 101</h1>
 
 Goatmire 2026 · Workshop
 
@@ -68,7 +68,7 @@ layout: default
   - `DEEP_DIVE.md`: the theory explained, task walked through step by step
 - **Bonus tasks**: some chapters also have a `BONUS_TASKS.md` for those who finish early
 - **Checkpoint branches**: `chapter-1-checkpoint` … `chapter-4-checkpoint` hold our solutions. Fall back on them if something goes sideways.
-- **Prerequisites**: Elixir 1.20 on OTP 27 or 28, FFmpeg with `ffplay`, SDL2, PortAudio, libvpx, x264, fdk-aac. Install commands are in the repo's `README.md`.
+- **Prerequisites**: Elixir 1.17 on OTP 27 or 28, FFmpeg with `ffplay`. Install commands are in the repo's `README.md`.
 
 </v-clicks>
 
@@ -104,8 +104,8 @@ layout: default
 1. **Codecs**: why raw media doesn't fit anywhere
 2. **Containers**: how encoded streams are stored and shipped
 3. **Transcoding**, **muxing** and **demuxing**
-4. **Membrane**: components, pads, plugins
-5. **Pipelines**: describing a graph of components in code
+4. **Membrane**: elements, pads, plugins
+5. **Pipelines**: describing a graph of elements in code
 6. **The task**: MP3 + IVF in, MP4 out
 
 </v-clicks>
@@ -136,16 +136,16 @@ a **decoder** turns it back into raw frames or samples.
 
 **Video**
 
-- **VP8**: open, royalty-free. Our input.
-- **H.264 / AVC**: by far the most used video format in the industry. Our output.
+- **VP8**: open, royalty-free.
+- **H.264 / AVC**: by far the most used video format in the industry.
 
 </div>
 <div>
 
 **Audio**
 
-- **MP3**: the classic. Our input.
-- **AAC**: designed as the successor of MP3, widely supported. Our output.
+- **MP3**: the classic.
+- **AAC**: designed as the successor of MP3, widely supported.
 
 </div>
 </div>
@@ -163,11 +163,16 @@ where each frame starts, its timestamp, which track it belongs to.
 
 <v-clicks>
 
-- **IVF**: a very simple container for a single video stream (VP8, VP9, AV1). Our input video lives in one.
-- **MP4**: the container you meet everywhere. Many tracks: video, audio, subtitles. Our output.
-- **MP3**: no container needed. The encoded stream can go straight into a file.
+- **IVF**: a very simple container for a single video stream (VP8, VP9, AV1).
+- **MP4**: the container you meet everywhere. Many tracks: video, audio, subtitles.
 
 </v-clicks>
+
+<v-click>
+
+Not every stream needs one: MP3 does not need a container, the encoded stream can go straight into a file.
+
+</v-click>
 
 <v-click>
 
@@ -194,24 +199,19 @@ layout: default
 
 **Decoding** turns a coded stream into raw media, **encoding** does the reverse.
 **Transcoding** converts one coding format to another.
-Dashed shapes are streams, solid boxes are elements that process them.
 
 <div class="flex justify-center">
 
-```mermaid {scale: 0.5}
+```mermaid {scale: 0.6}
 graph LR
   A[/VP8 stream/]:::stream
   subgraph T[transcoding]
-    subgraph D[decoding]
-      B[VP8 decoder]
-    end
-    C[/raw video frames/]:::stream
-    subgraph E[encoding]
-      F[H.264 encoder]
-    end
+    B[VP8 decoder] --> C[/raw video frames/]:::stream --> F[H.264 encoder]
   end
-  A --> B --> C --> F --> G[/H.264 stream/]:::stream
+  A --> B
+  F --> G[/H.264 stream/]:::stream
   classDef stream fill:#ffffff,stroke:#001A72,stroke-dasharray:4 3
+  style T fill:#ffffff,stroke:#001A72
 ```
 
 </div>
@@ -222,20 +222,16 @@ graph LR
 
 <div class="flex justify-center">
 
-```mermaid {scale: 0.5}
+```mermaid {scale: 0.6}
 graph LR
   A[/MP3 stream/]:::stream
   subgraph T[transcoding]
-    subgraph D[decoding]
-      B[MP3 decoder]
-    end
-    C[/raw audio samples/]:::stream
-    subgraph E[encoding]
-      F[AAC encoder]
-    end
+    B[MP3 decoder] --> C[/raw audio samples/]:::stream --> F[AAC encoder]
   end
-  A --> B --> C --> F --> G[/AAC stream/]:::stream
+  A --> B
+  F --> G[/AAC stream/]:::stream
   classDef stream fill:#ffffff,stroke:#001A72,stroke-dasharray:4 3
+  style T fill:#ffffff,stroke:#001A72
 ```
 
 </div>
@@ -259,13 +255,14 @@ layout: default
 
 **Muxing** (multiplexing)
 
-Merge several streams into one, interleaved and synchronized.
+Merging several streams into one, interleaved and synchronized.
 
 ```mermaid {scale: 0.7}
 graph LR
-  A[H.264] --> M[MP4 muxer]
-  B[AAC] --> M
-  M --> C[MP4]
+  A[/H.264/]:::stream --> M[MP4 muxer]
+  B[/AAC/]:::stream --> M
+  M --> C[/MP4/]:::stream
+  classDef stream fill:#ffffff,stroke:#001A72,stroke-dasharray:4 3
 ```
 
 </div>
@@ -277,9 +274,10 @@ The reverse. Whatever reads the stream, like a media player, splits it back into
 
 ```mermaid {scale: 0.7}
 graph LR
-  C[MP4] --> D[MP4 demuxer]
-  D --> A[H.264]
-  D --> B[AAC]
+  C[/MP4/]:::stream --> D[MP4 demuxer]
+  D --> A[/H.264/]:::stream
+  D --> B[/AAC/]:::stream
+  classDef stream fill:#ffffff,stroke:#001A72,stroke-dasharray:4 3
 ```
 
 </div>
@@ -294,10 +292,10 @@ layout: default
 <v-clicks>
 
 - A multimedia framework written in **Elixir**.
-- A **pipeline** is a graph of **components** that media flows through.
-- Every component is an Erlang process.
-- Components connect through **pads**. Pads must be compatible for media to flow.
-- `membrane_core` is the engine. Components are shipped in **plugins**, one per domain: files, MP4, H.264, WebRTC…
+- A **pipeline** is a graph of **elements** that media flows through.
+- Every element is an Erlang process.
+- Elements connect through **pads**. Pads must be compatible for media to flow.
+- `membrane_core` is the engine. Elements are shipped in **plugins**, one per domain: files, MP4, H.264, WebRTC…
 
 </v-clicks>
 
@@ -305,7 +303,7 @@ layout: default
 layout: default
 ---
 
-# Three kinds of components
+# Three kinds of elements
 
 ```mermaid {scale: 0.9}
 graph LR
@@ -371,12 +369,13 @@ layout: default
 
 A pipeline is a module. Membrane calls its **callbacks**, the callbacks return **actions**.
 
-```elixir {all|1|3-4|5|6|all}
+```elixir {all|1|3-4|6|7|all}
 defmodule WorkshopPipeline do
   use Membrane.Pipeline
 
   @impl true
   def handle_init(_ctx, _opts) do
+    spec = ...
     {[spec: spec], %{}}
   end
 end
@@ -396,14 +395,14 @@ layout: default
 
 # Describing a pipeline: `child`
 
-`child/2` starts a chain, `child/3` extends it. Name first, module or struct second.
+`child/2` starts a chain, `child/3` extends it. Name goes first, module or struct second.
 
 <div class="grid grid-cols-2 gap-6">
 <div>
 
 ```elixir
 spec = [
-  child(:my_source, MySource)
+  child(:my_source, %MySource{some_option: :value})
   |> child(:my_filter, MyFilter)
   |> child(:my_sink, MySink)
 ]
@@ -422,7 +421,7 @@ graph LR
 
 <v-clicks>
 
-- Piping the **builder** from one `child` into the next **links** them: output pad to input pad.
+- Piping one `child` into the next **links** them: output pad to input pad.
 - The chain starts with a **Source** and must end with a **Sink**.
 
 </v-clicks>
@@ -467,7 +466,33 @@ layout: default
 
 # Choosing pads: `via_in` and `via_out`
 
-Components can have several pads, and pads can take **options**.
+A link goes from an output pad to an input pad. By default these are `:output` and `:input`:
+
+<div class="grid grid-cols-[1fr_auto_1fr] gap-4 items-center">
+<div>
+
+```elixir
+child(:my_source, MySource)
+|> via_out(:output)
+|> via_in(:input)
+|> child(:my_filter, MyFilter)
+```
+
+</div>
+<div class="text-3xl font-semibold" style="color: var(--membrane-navy)">=</div>
+<div>
+
+```elixir
+child(:my_source, MySource)
+|> child(:my_filter, MyFilter)
+```
+
+</div>
+</div>
+
+<v-click>
+
+Elements can have several pads, and pads can take **options**:
 
 ```elixir {all|3|3-4|all}
 spec = [
@@ -477,26 +502,22 @@ spec = [
 ]
 ```
 
-<v-clicks at="1">
+</v-click>
+
+<v-clicks at="2">
 
 - link `:my_source`'s pad named `:some_output`, not the default one
 - and set its `:some_pad_option` to `:some_value`
 
 </v-clicks>
 
-<v-click>
-
-`via_in/3` does the same for the input side. Without them, the default pads `:output` and `:input` are used.
-
-</v-click>
-
 ---
 layout: default
 ---
 
-# Configuring components
+# Configuring elements
 
-Almost every component has **options**. Pass a struct instead of a module.
+Almost every element has **options**. Pass a struct instead of a module.
 
 ```elixir
 spec = [
@@ -507,7 +528,7 @@ spec = [
 
 <v-click>
 
-Available options are listed in each component's docs. Two you'll need today:
+Available options are listed in each element's docs. Two you'll need today:
 
 - `Membrane.File.Source` has `:location` and `:content_format`
 - `Membrane.Transcoder` takes `:output_stream_format` as an option of its `:output` pad, so it goes through `via_out`
@@ -546,7 +567,7 @@ layout: default
 
 # Knowing when to stop
 
-The pipeline doesn't know when its job is done. You do: when the **last** component gets **end of stream**.
+The pipeline doesn't know when its job is done. You do: when the **last** element gets **end of stream**.
 
 ```elixir {all|1-4|6-9|all}
 @impl true
@@ -571,7 +592,7 @@ end
 layout: default
 ---
 
-# The task, in one sentence
+# Task 1: from MP3 and IVF to MP4
 
 Read audio from an **MP3** file and **VP8** video from an **IVF** file,
 transcode them into **AAC** and **H.264**, mux both into a single **MP4**.
@@ -612,8 +633,8 @@ Our solution: `chapter-1-checkpoint`.
 
 **Building blocks**
 
-| Package | Component | Kind | What it does |
-|---------|-----------|------|--------------|
+| Package | Element | Kind | What it does |
+|---------|---------|------|--------------|
 | `membrane_file_plugin` | `Membrane.File.Source` | Source | Reads chunks of bytes from a file |
 | `membrane_ivf_plugin` | `Membrane.IVF.Deserializer` | Filter | Extracts the video stream from an IVF container |
 | `membrane_transcoder_plugin` | `Membrane.Transcoder` | Filter | Converts the stream into the format you declare |
@@ -703,7 +724,7 @@ inverted = 255 - value
 
 <v-click>
 
-Adding the negative to the original pixel-wise gives a completely white image.
+Adding the inverted image to the original pixel-wise gives a completely white image.
 
 </v-click>
 
@@ -717,18 +738,14 @@ In RGB every byte is one color value, so inverting a frame is inverting every by
 layout: default
 ---
 
-# Elements
+# Defining own Elements
 
-<span class="pill light">Reminder</span> The most basic components of a pipeline. Three kinds: **Source** produces, **Sink** consumes, **Filter** does both.
+<span class="pill light">Reminder</span> An element is the most basic component of the pipeline.
 
 <v-clicks>
 
 - An element is a module implementing the behaviour of its kind: `use Membrane.Source`, `use Membrane.Sink` or `use Membrane.Filter`.
-- Two things to define: **pads**, which interface with other components, and **callbacks**, which define behaviour.
-- A blank filter:
-  ```bash
-  mix membrane.gen.filter ColorInverter
-  ```
+- Two things to define: **pads**, which interface with other elements, and **callbacks**, which define behaviour.
 
 </v-clicks>
 
@@ -739,7 +756,7 @@ layout: default
 # Pads specification
 
 Each pad declares an **accepted format**: a contract about what the element handles.
-Only components with matching formats can be linked.
+Only elements with matching formats can be linked.
 
 ```elixir
 def_input_pad :input,
@@ -785,7 +802,7 @@ end
 layout: default
 ---
 
-# The task
+# Task 2: invert the colors
 
 Create an element that inverts the colors of an RGB raw video stream and plug it into the middle of the pipeline from Chapter 1.
 
@@ -887,6 +904,31 @@ DTS is always strictly increasing. PTS may equal DTS, but not with **B-frames**:
 
 </v-click>
 
+<v-click>
+
+<div class="grid grid-cols-[auto_1fr] gap-x-6 items-center mt-2">
+<div class="text-sm">Presentation order (PTS)</div>
+<div>
+
+```mermaid {scale: 0.55}
+graph LR
+  I[I] --> B1[B] --> B2[B] --> P[P]
+```
+
+</div>
+<div class="text-sm">Decoding order (DTS)</div>
+<div>
+
+```mermaid {scale: 0.55}
+graph LR
+  I[I] --> P[P] --> B1[B] --> B2[B]
+```
+
+</div>
+</div>
+
+</v-click>
+
 ---
 layout: default
 ---
@@ -895,9 +937,9 @@ layout: default
 
 <v-clicks>
 
-- Usually from the **container**. A plain H.264 stream has none, an MP4 has them for every sample. So right after `File.Source` there are none, they appear after demuxing.
-- With a **constant rate** they can be restored: each chunk has a known duration, the timestamp is the sum of the durations before it. The offset of the whole stream is lost, so it starts from zero.
-  - Audio has a constant sampling rate by nature: `Membrane.RawAudioParser` with `overwrite_pts?: true` counts samples and sets `pts`.
+- Usually from the **container**. A plain H.264 codec stream has none, an MP4 container has them for every sample. So right after `File.Source` there are none, they appear after demuxing.
+- With a **constant rate** they can be restored: each chunk has a known duration, the timestamp is the sum of the durations before it. The offset of the whole stream is lost.
+  - Raw audio has a constant sampling rate by nature: `Membrane.RawAudioParser` with `overwrite_pts?: true` counts samples and sets `pts`.
   - Video only if the frame rate is constant. That's why the corresponding option of `Membrane.H264.Parser` is called `generate_best_effort_timestamps`: you supply the frame rate, and the result may drift out of sync.
 
 </v-clicks>
@@ -913,14 +955,14 @@ layout: default
 
 **Offline**
 
-Transcode a file into another file. Timestamps are carried along, but nothing waits for them. As fast as possible.
+Example: transcode a file into another file. Timestamps are carried along, but nothing waits for them. As fast as possible.
 
 </div>
 <div v-click>
 
 **Online**
 
-Display to a user or send to a peer. Each chunk has to be delivered when its timestamp says.
+Example: display to a user or send to a peer. Each chunk has to be delivered when its timestamp says.
 
 </div>
 </div>
@@ -948,7 +990,7 @@ Every element is a process with its own mailbox. A fast producer feeding a slow 
 <v-clicks>
 
 - The **slowest** element should dictate the pace, not the fastest.
-- The consumer telling the producer how much it can take is **backpressure**. Membrane implements it with **demands**.
+- The consumer telling the producer how much it can take is **backpressure**.
 - Configured per pad with the `flow_control` option of `def_input_pad` and `def_output_pad`.
 
 </v-clicks>
@@ -1004,7 +1046,7 @@ defmodule PassThrough do
   use Membrane.Filter
 
   def_input_pad :input, accepted_format: _any, flow_control: :manual, demand_unit: :buffers
-  def_output_pad :output, accepted_format: _any, flow_control: :manual
+  def_output_pad :output, accepted_format: _any, flow_control: :manual, demand_unit: :buffers
 
   @impl true
   def handle_demand(:output, size, :buffers, _ctx, state) do
@@ -1020,7 +1062,7 @@ end
 
 <v-clicks at="1">
 
-- both pads manual, input demand counted in buffers
+- both pads manual, demand counted in buffers
 - downstream asks for `size` buffers, the filter asks upstream for the same
 - each buffer is passed on. When downstream wants more, `handle_demand/5` is called again
 
@@ -1034,7 +1076,7 @@ layout: default
 
 <v-clicks>
 
-- `:demand` **overwrites** the current demand, it does not add to it.
+- `:demand` on an input pad **overwrites** the current demand, it does not add to it.
 - You are guaranteed not to receive more than you demanded.
 - You are expected to satisfy the whole demand on your output. If you dropped some buffers, return `redemand: :output`: `handle_demand/5` is called again with the updated demand.
 
@@ -1062,7 +1104,7 @@ layout: default
 
 # Task 3.1: play the video in real time
 
-Drop the audio branch and the MP4 muxing. The output of `ColorInverter` ends up in `Membrane.SDL.Player`, played at natural speed.
+Drop the audio branch and the MP4 muxing. Play the output from `ColorInverter` using `Membrane.SDL.Player`, at natural speed.
 
 <div class="flex justify-center">
 
@@ -1085,7 +1127,7 @@ graph LR
 layout: default
 ---
 
-# Hands-on 3.1
+# Hands-on
 
 <v-clicks>
 
@@ -1102,8 +1144,8 @@ layout: default
 
 **Building blocks**
 
-| Package | Component | Kind | What it does |
-|---------|-----------|------|--------------|
+| Package | Element | Kind | What it does |
+|---------|---------|------|--------------|
 | `membrane_realtimer_plugin` | `Membrane.Realtimer` | Filter | Holds every buffer until its timestamp is reached. The first buffer's timestamp is the starting point |
 | `membrane_sdl_plugin` | `Membrane.SDL.Player` | Sink | Opens a window and draws raw video frames. Accepts only `I420` |
 
@@ -1120,7 +1162,7 @@ Write a `StreamSwitcher` filter with `:main` and `:ad` inputs, one `:output`, an
 
 <div class="flex justify-center">
 
-```mermaid {scale: 0.42}
+```mermaid {scale: 0.5}
 graph LR
   A[/bbb_vp8.ivf/]:::stream --> B[File.Source] --> C[IVF.Deserializer] --> D[Transcoder] --> E[ColorInverter] --> S
   A2[/ad_vp8.ivf/]:::stream --> B2[File.Source] --> C2[IVF.Deserializer] --> D2[Transcoder] --> S
@@ -1146,7 +1188,7 @@ graph LR
 layout: default
 ---
 
-# Hands-on 3.2
+# Hands-on
 
 No new building blocks, the switcher is yours to write.
 
@@ -1197,12 +1239,12 @@ graph LR
 layout: default
 ---
 
-# Hands-on 3.3
+# Hands-on
 
 <v-clicks>
 
 - The audio and video branches are not connected at all. They only share the `switch_time`.
-- MP3 carries no timestamps: `RawAudioParser` with `overwrite_pts?: true` in both branches, between the decoder and the switcher.
+- MP3 carries no timestamps: add `RawAudioParser` with `overwrite_pts?: true` in both branches, between the decoder and the switcher.
 - Both decoders must output the same format: `%RawAudio{sample_format: :s16le, sample_rate: 44_100, channels: 2}`.
 
 </v-clicks>
@@ -1215,8 +1257,8 @@ Our solution: `chapter-3-checkpoint`.
 
 **Building blocks**
 
-| Package | Component | Kind | What it does |
-|---------|-----------|------|--------------|
+| Package | Element | Kind | What it does |
+|---------|---------|------|--------------|
 | `membrane_portaudio_plugin` | `Membrane.PortAudio.Sink` | Sink | Plays raw audio through the default audio device |
 | `membrane_raw_audio_parser_plugin` | `Membrane.RawAudioParser` | Filter | Computes timestamps of raw audio buffers from their size and format |
 
@@ -1271,7 +1313,7 @@ The standard doesn't say how these messages travel. Here: a WebSocket between th
 
 **Connection**
 
-Once the peers know each other's addresses, they set up an encrypted connection and send media over it in small packets: **RTP**.
+Once the peers know each other's addresses, they set up an encrypted connection and send media over it in small packets: **RTP**, usually transported over UDP.
 
 </div>
 </div>
@@ -1359,17 +1401,11 @@ def handle_child_notification(_notification, _child, _ctx, state) do
 end
 ```
 
-<v-click>
-
-`handle_element_end_of_stream/4` is no longer the right place: the sinks it was watching are gone.
-
-</v-click>
-
 ---
 layout: default
 ---
 
-# The task
+# Task 4: play it in the browser
 
 Play the output of the pipeline from Chapter 3 in the browser instead of the SDL window and the speakers.
 
