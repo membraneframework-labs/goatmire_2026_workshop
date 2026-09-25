@@ -3,6 +3,11 @@ defmodule WorkshopPipeline do
   use Membrane.Pipeline
 
   @switch_time Membrane.Time.seconds(15)
+  @input_signaling_url "ws://0.0.0.0:8829"
+  @output_signaling_url "ws://0.0.0.0:8830"
+  # The main streams are live, so while the ad is played their buffers pile up in front of the
+  # switchers. The default capacity (200 buffers) is not enough for a 14-second ad.
+  @toilet_capacity 5000
   @raw_audio_format %Membrane.Transcoder.OutputFormat.RawAudio{
     sample_format: :s16le,
     sample_rate: 44_100,
@@ -14,22 +19,21 @@ defmodule WorkshopPipeline do
   defmodule State do
     @moduledoc false
 
-    @type t :: %__MODULE__{ended_sinks: MapSet.t(Membrane.Child.name())}
+    @type t :: %__MODULE__{}
 
-    defstruct ended_sinks: MapSet.new()
+    defstruct []
   end
 
   @impl true
   def handle_init(_ctx, _opts) do
-    # :ivf_file_source --> :ivf_deserializer --> :video_decoder --> :color_inverter --> :video_stream_switcher
+    # :webrtc_input (video) --> :video_decoder --> :color_inverter --> :video_stream_switcher --> :webrtc_output (video)
     # :ad_ivf_file_source --> :ad_ivf_deserializer --> :ad_video_decoder ---------------------^
-    # :video_stream_switcher --> :pixel_format_converter --> :realtimer --> :sdl_player
     #
-    # :mp3_file_source --> :audio_decoder --> :audio_timestamper --> :audio_stream_switcher --> :portaudio_sink
-    # :ad_mp3_file_source --> :ad_audio_decoder --> :ad_audio_timestamper ---------^
+    # :webrtc_input (audio) --> :audio_decoder --> :audio_timestamper --> :audio_stream_switcher --> :webrtc_output (audio)
+    # :ad_mp3_file_source --> :ad_audio_decoder --> :ad_audio_timestamper -------------------^
     spec = [
-      child(:ivf_file_source, %Membrane.File.Source{location: "assets/bbb_vp8.ivf"})
-      |> child(:ivf_deserializer, Membrane.IVF.Deserializer)
+      child(:webrtc_input, %Boombox.Bin{input: {:webrtc, @input_signaling_url}})
+      |> via_out(:output, options: [kind: :video])
       |> child(:video_decoder, Membrane.Transcoder)
       |> via_out(:output,
         options: [
@@ -37,16 +41,10 @@ defmodule WorkshopPipeline do
         ]
       )
       |> child(:color_inverter, ColorInverter)
-      |> via_in(:main)
+      |> via_in(:main, toilet_capacity: @toilet_capacity)
       |> child(:video_stream_switcher, %StreamSwitcher{switch_time: @switch_time})
-      |> child(:pixel_format_converter, Membrane.Transcoder)
-      |> via_out(:output,
-        options: [
-          output_stream_format: %Membrane.Transcoder.OutputFormat.RawVideo{pixel_format: :I420}
-        ]
-      )
-      |> child(:realtimer, Membrane.Realtimer)
-      |> child(:sdl_player, Membrane.SDL.Player),
+      |> via_in(:input, options: [kind: :video])
+      |> child(:webrtc_output, %Boombox.Bin{output: {:webrtc, @output_signaling_url}}),
       child(:ad_ivf_file_source, %Membrane.File.Source{location: "assets/ad_vp8.ivf"})
       |> child(:ad_ivf_deserializer, Membrane.IVF.Deserializer)
       |> child(:ad_video_decoder, Membrane.Transcoder)
@@ -57,16 +55,15 @@ defmodule WorkshopPipeline do
       )
       |> via_in(:ad)
       |> get_child(:video_stream_switcher),
-      child(:mp3_file_source, %Membrane.File.Source{
-        location: "assets/bbb.mp3",
-        content_format: Membrane.MPEGAudio
-      })
+      get_child(:webrtc_input)
+      |> via_out(:output, options: [kind: :audio])
       |> child(:audio_decoder, Membrane.Transcoder)
       |> via_out(:output, options: [output_stream_format: @raw_audio_format])
       |> child(:audio_timestamper, %Membrane.RawAudioParser{overwrite_pts?: true})
-      |> via_in(:main)
+      |> via_in(:main, toilet_capacity: @toilet_capacity)
       |> child(:audio_stream_switcher, %StreamSwitcher{switch_time: @switch_time})
-      |> child(:portaudio_sink, Membrane.PortAudio.Sink),
+      |> via_in(:input, options: [kind: :audio])
+      |> get_child(:webrtc_output),
       child(:ad_mp3_file_source, %Membrane.File.Source{
         location: "assets/ad.mp3",
         content_format: Membrane.MPEGAudio
@@ -82,19 +79,17 @@ defmodule WorkshopPipeline do
   end
 
   @impl true
-  def handle_element_end_of_stream(sink, _pad, _ctx, %State{} = state)
-      when sink in [:sdl_player, :portaudio_sink] do
-    state = %State{state | ended_sinks: MapSet.put(state.ended_sinks, sink)}
-
-    if MapSet.size(state.ended_sinks) == 2 do
-      {[terminate: :normal], state}
-    else
-      {[], state}
-    end
+  def handle_element_end_of_stream(_element, _pad, _ctx, state) do
+    {[], state}
   end
 
   @impl true
-  def handle_element_end_of_stream(_element, _pad, _ctx, state) do
+  def handle_child_notification(:processing_finished, :webrtc_output, _ctx, state) do
+    {[terminate: :normal], state}
+  end
+
+  @impl true
+  def handle_child_notification(_notification, _element, _ctx, state) do
     {[], state}
   end
 end
